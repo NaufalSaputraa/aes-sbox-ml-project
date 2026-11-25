@@ -1,0 +1,359 @@
+{
+  "metadata": {
+    "generated_at_utc": "2026-11-25T01:02:27.225833+00:00",
+    "seed": 42,
+    "key_hex": "8826d916cdfb21c6c1ff91a761565a70",
+    "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+    "target_image_metrics": {
+      "ENTROPY": 8.0,
+      "NPCR": 99.6094,
+      "UACI": 33.4635
+    }
+  },
+  "summary_table": [
+    {
+      "Image": "foto_asli",
+      "Mode": "CBC",
+      "S-box": "aes_standard",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99909",
+      "NPCR(%)": "99.6014",
+      "UACI(%)": "33.4568",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "251.0",
+      "Enc(ms)": "160.23",
+      "Dec(ms)": "27.26"
+    },
+    {
+      "Image": "foto_asli",
+      "Mode": "CBC",
+      "S-box": "benchmark_sbox44",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99894",
+      "NPCR(%)": "99.6049",
+      "UACI(%)": "33.4428",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "261.4",
+      "Enc(ms)": "163.28",
+      "Dec(ms)": "27.25"
+    },
+    {
+      "Image": "foto_asli",
+      "Mode": "CBC",
+      "S-box": "custom_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99916",
+      "NPCR(%)": "99.5919",
+      "UACI(%)": "33.3583",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "252.5",
+      "Enc(ms)": "164.44",
+      "Dec(ms)": "26.41"
+    },
+    {
+      "Image": "foto_asli",
+      "Mode": "CTR",
+      "S-box": "aes_standard",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99907",
+      "NPCR(%)": "0.0005",
+      "UACI(%)": "0.0000",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "252.6",
+      "Enc(ms)": "21.81",
+      "Dec(ms)": "21.56"
+    },
+    {
+      "Image": "foto_asli",
+      "Mode": "CTR",
+      "S-box": "benchmark_sbox44",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99919",
+      "NPCR(%)": "0.0005",
+      "UACI(%)": "0.0000",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "261.4",
+      "Enc(ms)": "21.55",
+      "Dec(ms)": "21.44"
+    },
+    {
+      "Image": "foto_asli",
+      "Mode": "CTR",
+      "S-box": "custom_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47986",
+      "Entropy(Enc)": "7.99894",
+      "NPCR(%)": "0.0005",
+      "UACI(%)": "0.0000",
+      "Chi2(Orig)": "38139.4",
+      "Chi2(Enc)": "266.7",
+      "Enc(ms)": "21.64",
+      "Dec(ms)": "21.76"
+    }
+  ],
+  "results": {
+    "foto_asli": {
+      "CBC": {
+        "aes_standard": {
+          "mode": "CBC",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.999094646560562,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.997029729337947,
+            "G": 7.997703033156126,
+            "B": 7.997105917113876
+          },
+          "npcr": 99.60138613464736,
+          "uaci": 33.45679797869111,
+          "npcr_plain_vs_cipher": 99.6088977024618,
+          "uaci_plain_vs_cipher": 28.68321528879965,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 273.30641187428637,
+            "G": 212.74082086413074,
+            "B": 266.87602908479056,
+            "mean": 250.97442060773588
+          },
+          "encryption_time_ms": 160.2312999998503,
+          "decryption_time_ms": 27.259999999841966
+        },
+        "benchmark_sbox44": {
+          "mode": "CBC",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.998939060152567,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.996733331948639,
+            "G": 7.997455507790038,
+            "B": 7.997309174479799
+          },
+          "npcr": 99.60489153296076,
+          "uaci": 33.442829408269134,
+          "npcr_plain_vs_cipher": 99.63543857540613,
+          "uaci_plain_vs_cipher": 28.657571876375894,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 302.05853013641,
+            "G": 234.71642329186946,
+            "B": 247.43873565290548,
+            "mean": 261.40456302706167
+          },
+          "encryption_time_ms": 163.278900000023,
+          "decryption_time_ms": 27.245100000072853
+        },
+        "custom_sbox": {
+          "mode": "CBC",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.999155873350655,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.996942925317765,
+            "G": 7.997308897185259,
+            "B": 7.997536090376443
+          },
+          "npcr": 99.59187148208241,
+          "uaci": 33.35830119560593,
+          "npcr_plain_vs_cipher": 99.62892854996694,
+          "uaci_plain_vs_cipher": 28.59346923674223,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 282.59816116819906,
+            "G": 248.0694669791479,
+            "B": 226.7861306411874,
+            "mean": 252.48458626284477
+          },
+          "encryption_time_ms": 164.43709999975908,
+          "decryption_time_ms": 26.408100000026025
+        }
+      },
+      "CTR": {
+        "aes_standard": {
+          "mode": "CTR",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.999069954194828,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.997079747099109,
+            "G": 7.9973830769619685,
+            "B": 7.997308399282602
+          },
+          "npcr": 0.0005007711876289486,
+          "uaci": 1.963808578937053e-06,
+          "npcr_plain_vs_cipher": 99.59587765158344,
+          "uaci_plain_vs_cipher": 28.606235956313903,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 269.38357069887627,
+            "G": 240.25455201009555,
+            "B": 248.09254251547384,
+            "mean": 252.57688840814853
+          },
+          "encryption_time_ms": 21.808299999975134,
+          "decryption_time_ms": 21.560700000009092
+        },
+        "benchmark_sbox44": {
+          "mode": "CTR",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.99919273335688,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.997414979624632,
+            "G": 7.996746146735224,
+            "B": 7.997337525608335
+          },
+          "npcr": 0.0005007711876289486,
+          "uaci": 5.89142573681116e-06,
+          "npcr_plain_vs_cipher": 99.60839693127416,
+          "uaci_plain_vs_cipher": 28.595766892779583,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 237.46241211465656,
+            "G": 301.10474130160446,
+            "B": 245.69268673757585,
+            "mean": 261.4199467179456
+          },
+          "encryption_time_ms": 21.551999999701366,
+          "decryption_time_ms": 21.436199999698147
+        },
+        "custom_sbox": {
+          "mode": "CTR",
+          "shape": [
+            258,
+            258,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.479860823566429,
+          "entropy_encrypted": 7.998938907418297,
+          "channel_entropy_original": {
+            "R": 7.479860823566429,
+            "G": 7.479860823566429,
+            "B": 7.479860823566429
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.997131006475078,
+            "G": 7.996846663937483,
+            "B": 7.997338086306968
+          },
+          "npcr": 0.0005007711876289486,
+          "uaci": 5.89142573681116e-06,
+          "npcr_plain_vs_cipher": 99.63443703303086,
+          "uaci_plain_vs_cipher": 28.633941367745543,
+          "chi_square_original": {
+            "R": 38139.44618712818,
+            "G": 38139.44618712818,
+            "B": 38139.44618712818,
+            "mean": 38139.44618712818
+          },
+          "chi_square_encrypted": {
+            "R": 264.11465657111955,
+            "G": 290.09771047413017,
+            "B": 245.9849768643711,
+            "mean": 266.7324479698736
+          },
+          "encryption_time_ms": 21.643800000219926,
+          "decryption_time_ms": 21.75729999999021
+        }
+      }
+    }
+  }
+}
