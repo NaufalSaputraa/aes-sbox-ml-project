@@ -14,8 +14,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.aes_custom import AESCustom, pad_pkcs7, unpad_pkcs7
 from src.image_eval import (
+    compute_adjacent_pixel_correlation,
     compute_histogram,
+    compute_npcr_uaci_critical_test,
     evaluate_image_encryption,
+    evaluate_text_encryption,
     generate_sample_images,
     load_sbox_from_results,
 )
@@ -147,6 +150,91 @@ class TestImageEvaluation(unittest.TestCase):
                 self.assertEqual(res["mse"], 0.0)
                 self.assertEqual(res["max_abs_diff"], 0)
                 self.assertGreater(res["entropy_encrypted"], 7.95)
+
+    def test_correlation_wu2011_text_avalanche_and_non_algebraic_sbox(self) -> None:
+        gray = self.samples["grayscale_sample"]
+        non_alg_sbox = load_sbox_from_results("non_algebraic_sbox")
+
+        res = evaluate_image_encryption(
+            gray,
+            key=self.key,
+            sbox=non_alg_sbox,
+            mode="CBC",
+            iv_or_nonce=self.iv,
+        )
+        self.assertTrue(res["is_lossless"])
+        self.assertTrue(res["wu2011_test"]["npcr_pass"])
+        self.assertTrue(res["wu2011_test"]["uaci_pass"])
+
+        corr_orig = compute_adjacent_pixel_correlation(gray)
+        corr_enc = res["correlation_encrypted"]
+        self.assertGreater(abs(corr_orig["horizontal"]), 0.5)
+        self.assertLess(abs(corr_enc["horizontal"]), 0.08)
+        self.assertLess(abs(corr_enc["vertical"]), 0.08)
+        self.assertLess(abs(corr_enc["diagonal"]), 0.08)
+
+        wu = compute_npcr_uaci_critical_test(res["encrypted_image"], res["encrypted_image"])
+        self.assertFalse(wu["npcr_pass"])
+
+        text_res = evaluate_text_encryption(
+            "Uji Kriptografi AES-128 Custom S-box Non-Aljabar",
+            key=self.key,
+            sbox=non_alg_sbox,
+            mode="CBC",
+            iv_or_nonce=self.iv,
+        )
+        self.assertTrue(text_res["is_exact_match"])
+        self.assertGreater(text_res["bit_avalanche_pct"], 35.0)
+        self.assertLess(text_res["bit_avalanche_pct"], 65.0)
+        for name, img in self.samples.items():
+            with self.subTest(image=name, mode="CTR"):
+                res = evaluate_image_encryption(
+                    img,
+                    key=self.key,
+                    sbox=self.custom_sbox,
+                    mode="CTR",
+                    iv_or_nonce=self.iv,
+                )
+                self.assertTrue(res["is_lossless"])
+                self.assertEqual(res["mse"], 0.0)
+                self.assertEqual(res["max_abs_diff"], 0)
+                self.assertGreater(res["entropy_encrypted"], 7.95)
+
+    def test_correlation_wu2011_text_avalanche_and_non_algebraic_sbox(self) -> None:
+        gray = self.samples["grayscale_sample"]
+        non_alg_sbox = load_sbox_from_results("non_algebraic_sbox")
+
+        res = evaluate_image_encryption(
+            gray,
+            key=self.key,
+            sbox=non_alg_sbox,
+            mode="CBC",
+            iv_or_nonce=self.iv,
+        )
+        self.assertTrue(res["is_lossless"])
+        self.assertTrue(res["wu2011_test"]["npcr_pass"])
+        self.assertTrue(res["wu2011_test"]["uaci_pass"])
+
+        corr_orig = compute_adjacent_pixel_correlation(gray)
+        corr_enc = res["correlation_encrypted"]
+        self.assertGreater(abs(corr_orig["horizontal"]), 0.5)
+        self.assertLess(abs(corr_enc["horizontal"]), 0.08)
+        self.assertLess(abs(corr_enc["vertical"]), 0.08)
+        self.assertLess(abs(corr_enc["diagonal"]), 0.08)
+
+        wu = compute_npcr_uaci_critical_test(res["encrypted_image"], res["encrypted_image"])
+        self.assertFalse(wu["npcr_pass"])
+
+        text_res = evaluate_text_encryption(
+            "Uji Kriptografi AES-128 Custom S-box Non-Aljabar",
+            key=self.key,
+            sbox=non_alg_sbox,
+            mode="CBC",
+            iv_or_nonce=self.iv,
+        )
+        self.assertTrue(text_res["is_exact_match"])
+        self.assertGreater(text_res["bit_avalanche_pct"], 35.0)
+        self.assertLess(text_res["bit_avalanche_pct"], 65.0)
 
 
 if __name__ == "__main__":

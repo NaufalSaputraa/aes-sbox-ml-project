@@ -24,7 +24,11 @@ from src.gf_math import (
     gf_mul,
 )
 from src.sbox_metrics import evaluate_sbox, validate_sbox
-from src.sbox_optimizer import HybridGASASboxOptimizer
+from src.sbox_optimizer import (
+    HybridGASASboxOptimizer,
+    NonAlgebraicWHSOptimizer,
+    run_random_search_benchmark,
+)
 
 
 class TestGFMath(unittest.TestCase):
@@ -78,6 +82,11 @@ class TestSBoxMetrics(unittest.TestCase):
         self.assertAlmostEqual(m["dap"], 0.015625, places=6)
         self.assertAlmostEqual(m["s_score"], 0.0047433036, places=5)
         self.assertAlmostEqual(m["sv_score"], 16.0094866071, places=5)
+        self.assertEqual(m["du"], 4)
+        self.assertEqual(m["algebraic_degree_min"], 7)
+        self.assertEqual(m["algebraic_degree_max"], 7)
+        self.assertEqual(m["cycles"], [87, 81, 59, 27, 2])
+        self.assertEqual(m["num_cycles"], 5)
 
     def test_benchmark_sbox44_metrics(self) -> None:
         matrix = circulant_matrix(SBOX44_CIRCULANT_FIRST_ROW)
@@ -114,6 +123,22 @@ class TestSBoxOptimizer(unittest.TestCase):
         # Verify monotonic best_s_score improvement in convergence history
         s_scores = [entry["best_s_score"] for entry in res1.history]
         self.assertEqual(s_scores, sorted(s_scores, reverse=True))
+
+    def test_non_algebraic_optimizer_improves_nl_without_algebra(self) -> None:
+        opt = NonAlgebraicWHSOptimizer(seed=42, steps=2000)
+        res = opt.optimize()
+        self.assertTrue(res.metrics["valid"])
+        self.assertGreater(res.metrics["nl"], res.initial_metrics["nl"])
+        self.assertGreaterEqual(res.metrics["nl"], 100)
+        self.assertLess(res.metrics["lap"], res.initial_metrics["lap"])
+        self.assertTrue(
+            np.array_equal(res.inverse_sbox[res.sbox], np.arange(256, dtype=np.uint8))
+        )
+
+    def test_random_search_benchmark(self) -> None:
+        bench = run_random_search_benchmark(seed=42, budget=100)
+        self.assertEqual(bench["budget"], 100)
+        self.assertGreater(bench["mean_s_score"], bench["best_s_score"])
 
 
 if __name__ == "__main__":

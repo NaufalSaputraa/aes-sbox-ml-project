@@ -239,6 +239,147 @@ def compute_histogram_uniformity(histograms: dict[str, list[int]]) -> dict[str, 
     return result
 
 
+def _pearson_corr(x: np.ndarray, y: np.ndarray) -> float:
+    """Compute Pearson correlation coefficient safely."""
+    xf = x.astype(np.float64)
+    yf = y.astype(np.float64)
+    sx = float(np.std(xf))
+    sy = float(np.std(yf))
+    if sx == 0.0 or sy == 0.0:
+        return 0.0
+    return float(np.mean((xf - np.mean(xf)) * (yf - np.mean(yf))) / (sx * sy))
+
+
+def compute_adjacent_pixel_correlation(
+    image: np.ndarray,
+    max_pairs: int = 5000,
+    seed: int = 42,
+) -> dict[str, float]:
+    """Compute Horizontal, Vertical, and Diagonal adjacent-pixel correlation."""
+    arr = np.asarray(image, dtype=np.uint8)
+    channels = [arr] if arr.ndim == 2 else [arr[:, :, c] for c in range(arr.shape[2])]
+    rng = np.random.default_rng(seed)
+
+    horiz_vals: list[float] = []
+    vert_vals: list[float] = []
+    diag_vals: list[float] = []
+
+    for ch in channels:
+        h_a, h_b = ch[:, :-1].ravel(), ch[:, 1:].ravel()
+        v_a, v_b = ch[:-1, :].ravel(), ch[1:, :].ravel()
+        d_a, d_b = ch[:-1, :-1].ravel(), ch[1:, 1:].ravel()
+
+        if h_a.size > max_pairs:
+            idx = rng.choice(h_a.size, size=max_pairs, replace=False)
+            h_a, h_b = h_a[idx], h_b[idx]
+        if v_a.size > max_pairs:
+            idx = rng.choice(v_a.size, size=max_pairs, replace=False)
+            v_a, v_b = v_a[idx], v_b[idx]
+        if d_a.size > max_pairs:
+            idx = rng.choice(d_a.size, size=max_pairs, replace=False)
+            d_a, d_b = d_a[idx], d_b[idx]
+
+        horiz_vals.append(_pearson_corr(h_a, h_b))
+        vert_vals.append(_pearson_corr(v_a, v_b))
+        diag_vals.append(_pearson_corr(d_a, d_b))
+
+    return {
+        "horizontal": float(np.mean(horiz_vals)),
+        "vertical": float(np.mean(vert_vals)),
+        "diagonal": float(np.mean(diag_vals)),
+    }
+
+
+def compute_npcr_uaci_critical_test(
+    cipher1: np.ndarray,
+    cipher2: np.ndarray,
+    alpha: float = 0.05,
+) -> dict[str, Any]:
+    """Run Wu et al. (2011) NPCR and UACI statistical hypothesis test at alpha=0.05."""
+    npcr = compute_npcr(cipher1, cipher2)
+    uaci = compute_uaci(cipher1, cipher2)
+
+    n_pixels = int(np.asarray(cipher1).size)
+    f_val = 255.0
+    z_alpha = 1.6448536269514722  # one-sided alpha = 0.05
+    z_half = 1.959963984540054    # two-sided alpha = 0.05
+
+    mu_npcr = (f_val / (f_val + 1.0)) * 100.0
+    sigma_npcr = float(np.sqrt(f_val / (((f_val + 1.0) ** 2) * n_pixels)) * 100.0)
+    npcr_critical = float(mu_npcr - z_alpha * sigma_npcr)
+
+    mu_uaci = ((f_val + 2.0) / (3.0 * f_val + 3.0)) * 100.0
+    sigma_uaci = float(
+        np.sqrt(
+            ((f_val + 2.0) * (f_val * f_val + 2.0 * f_val + 3.0))
+            / (18.0 * ((f_val + 1.0) ** 2) * f_val * n_pixels)
+        )
+        * 100.0
+    )
+    uaci_lower = float(mu_uaci - z_half * sigma_uaci)
+    uaci_upper = float(mu_uaci + z_half * sigma_uaci)
+
+    return {
+        "alpha": float(alpha),
+        "npcr": float(npcr),
+        "npcr_critical": npcr_critical,
+        "npcr_pass": bool(npcr >= npcr_critical),
+        "uaci": float(uaci),
+        "uaci_lower": uaci_lower,
+        "uaci_upper": uaci_upper,
+        "uaci_pass": bool(uaci_lower <= uaci <= uaci_upper),
+    }
+
+
+def evaluate_text_encryption(
+    plaintext: str,
+    key: bytes,
+    sbox: Sequence[int] | np.ndarray | None = None,
+    mode: str = "CBC",
+    iv_or_nonce: bytes | None = None,
+) -> dict[str, Any]:
+    """Encrypt/decrypt UTF-8 text and measure 1-bit plaintext avalanche (%)."""
+    cipher = AESCustom(key=key, sbox=sbox)
+    raw = plaintext.encode("utf-8")
+
+    t0 = time.perf_counter()
+    ct, used_iv = cipher.encrypt(raw, mode=mode, iv_or_nonce=iv_or_nonce)
+    enc_ms = (time.perf_counter() - t0) * 1000.0
+
+    t1 = time.perf_counter()
+    dec_raw = cipher.decrypt(ct, iv_or_nonce=used_iv, mode=mode)
+    dec_ms = (time.perf_counter() - t1) * 1000.0
+
+    dec_text = dec_raw.decode("utf-8", errors="replace")
+    is_exact = dec_raw == raw
+
+    if raw:
+        flipped = bytes([raw[0] ^ 0x01]) + raw[1:]
+        ct_flip, _ = cipher.encrypt(flipped, mode=mode, iv_or_nonce=used_iv)
+        c1 = np.frombuffer(ct, dtype=np.uint8)
+        c2 = np.frombuffer(ct_flip, dtype=np.uint8)
+        diff_bits = int(np.unpackbits(np.bitwise_xor(c1, c2)).sum())
+        total_bits = int(len(ct) * 8)
+        avalanche_pct = float(diff_bits / total_bits * 100.0) if total_bits > 0 else 0.0
+    else:
+        diff_bits = 0
+        total_bits = 0
+        avalanche_pct = 0.0
+
+    return {
+        "mode": mode.strip().upper(),
+        "iv_or_nonce_hex": used_iv.hex(),
+        "ciphertext_hex": ct.hex(),
+        "decrypted_text": dec_text,
+        "is_exact_match": bool(is_exact),
+        "bit_avalanche_pct": avalanche_pct,
+        "differing_bits": diff_bits,
+        "total_bits": total_bits,
+        "encryption_time_ms": float(enc_ms),
+        "decryption_time_ms": float(dec_ms),
+    }
+
+
 def evaluate_image_encryption(
     image: str | Path | Image.Image | np.ndarray,
     key: bytes,
@@ -276,6 +417,7 @@ def evaluate_image_encryption(
 
     hist_orig = compute_histogram(orig_arr)
     hist_enc = compute_histogram(enc_arr)
+    wu2011 = compute_npcr_uaci_critical_test(enc_arr, enc_mod_arr)
 
     return {
         "mode": enc_res["mode"],
@@ -292,10 +434,13 @@ def evaluate_image_encryption(
         "entropy_encrypted": compute_shannon_entropy(enc_arr),
         "channel_entropy_original": compute_channel_entropies(orig_arr),
         "channel_entropy_encrypted": compute_channel_entropies(enc_arr),
-        "npcr": compute_npcr(enc_arr, enc_mod_arr),
-        "uaci": compute_uaci(enc_arr, enc_mod_arr),
+        "npcr": wu2011["npcr"],
+        "uaci": wu2011["uaci"],
+        "wu2011_test": wu2011,
         "npcr_plain_vs_cipher": compute_npcr(orig_arr, enc_arr),
         "uaci_plain_vs_cipher": compute_uaci(orig_arr, enc_arr),
+        "correlation_original": compute_adjacent_pixel_correlation(orig_arr),
+        "correlation_encrypted": compute_adjacent_pixel_correlation(enc_arr),
         "histogram_original": hist_orig,
         "histogram_encrypted": hist_enc,
         "chi_square_original": compute_histogram_uniformity(hist_orig),

@@ -72,6 +72,10 @@ def main() -> int:
         "benchmark_sbox44": np.asarray(sbox_data["benchmark_sbox44"]["sbox_flat"], dtype=np.uint8),
         "custom_sbox": np.asarray(sbox_data["custom_sbox"]["sbox_flat"], dtype=np.uint8),
     }
+    if "non_algebraic_sbox" in sbox_data:
+        sboxes["non_algebraic_sbox"] = np.asarray(
+            sbox_data["non_algebraic_sbox"]["sbox_flat"], dtype=np.uint8
+        )
 
     if args.image is not None:
         images: dict[str, np.ndarray] = {
@@ -95,6 +99,8 @@ def main() -> int:
                     mode=mode,
                     iv_or_nonce=iv_or_nonce,
                 )
+                wu = res["wu2011_test"]
+                corr_e = res["correlation_encrypted"]
 
                 summary_rows.append(
                     {
@@ -106,10 +112,10 @@ def main() -> int:
                         "Entropy(Enc)": f"{res['entropy_encrypted']:.5f}",
                         "NPCR(%)": f"{res['npcr']:.4f}",
                         "UACI(%)": f"{res['uaci']:.4f}",
-                        "Chi2(Orig)": f"{res['chi_square_original']['mean']:.1f}",
+                        "Wu2011": f"{'PASS' if wu['npcr_pass'] else 'FAIL'}/{'PASS' if wu['uaci_pass'] else 'FAIL'}",
+                        "Corr(Enc H/V/D)": f"{corr_e['horizontal']:+.3f}/{corr_e['vertical']:+.3f}/{corr_e['diagonal']:+.3f}",
                         "Chi2(Enc)": f"{res['chi_square_encrypted']['mean']:.1f}",
                         "Enc(ms)": f"{res['encryption_time_ms']:.2f}",
-                        "Dec(ms)": f"{res['decryption_time_ms']:.2f}",
                     }
                 )
 
@@ -126,8 +132,11 @@ def main() -> int:
                     "channel_entropy_encrypted": res["channel_entropy_encrypted"],
                     "npcr": float(res["npcr"]),
                     "uaci": float(res["uaci"]),
+                    "wu2011_test": wu,
                     "npcr_plain_vs_cipher": float(res["npcr_plain_vs_cipher"]),
                     "uaci_plain_vs_cipher": float(res["uaci_plain_vs_cipher"]),
+                    "correlation_original": res["correlation_original"],
+                    "correlation_encrypted": res["correlation_encrypted"],
                     "chi_square_original": res["chi_square_original"],
                     "chi_square_encrypted": res["chi_square_encrypted"],
                     "encryption_time_ms": float(res["encryption_time_ms"]),
@@ -135,16 +144,16 @@ def main() -> int:
                 }
 
     df = pd.DataFrame(summary_rows)
-    print("=" * 100)
+    print("=" * 116)
     print("AES-128 Custom S-Box Image Encryption & Security Evaluation (Fase 3)")
-    print("=" * 100)
+    print("=" * 116)
     print(f"Locked Seed : {args.seed}")
     print(f"AES Key Hex : {key.hex()}")
     print(f"IV/Nonce Hex: {iv_or_nonce.hex()}")
     print(f"Target      : Entropy~{TARGET_IMAGE_METRICS['ENTROPY']}, NPCR~{TARGET_IMAGE_METRICS['NPCR']}%, UACI~{TARGET_IMAGE_METRICS['UACI']}%")
-    print("-" * 100)
+    print("-" * 116)
     print(df.to_string(index=False))
-    print("=" * 100)
+    print("=" * 116)
 
     output_path: Path = args.output
     output_path.parent.mkdir(parents=True, exist_ok=True)

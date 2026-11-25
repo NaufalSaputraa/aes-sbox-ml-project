@@ -1,4 +1,4 @@
-"""Interactive Streamlit dashboard for AES S-box ML construction & image encryption."""
+"""Interactive 5-tab Streamlit dashboard for Dual-Track AES S-box ML & image/text cryptography."""
 
 from __future__ import annotations
 
@@ -28,14 +28,17 @@ from config import (
 )
 from src.image_eval import (
     evaluate_image_encryption,
+    evaluate_text_encryption,
     generate_sample_images,
     load_image_array,
 )
 
 SBOX_LABELS: dict[str, str] = {
-    "custom_sbox": "Custom GA-SA (Hasil Optimasi)",
+    "custom_sbox": "Custom GA-SA (Aljabar GL(8,2))",
+    "non_algebraic_sbox": "Non-Algebraic WHS-SA (Tanpa Aljabar/Polinomial)",
     "aes_standard": "AES Standar (FIPS-197)",
     "benchmark_sbox44": "S-box44 (Alamsyah et al., 2025)",
+    "random_permutation": "Permutasi Acak Awal (Baseline Non-Aljabar)",
 }
 
 DEFAULT_KEY_HEX = "8826d916cdfb21c6c1ff91a761565a70"
@@ -103,50 +106,40 @@ def _render_sbox_grid_df(grid: list[list[Any]]) -> pd.DataFrame:
     return pd.DataFrame(grid, index=row_labels, columns=col_labels)
 
 
-def _plot_sbox_deviation_comparison(sbox_data: dict[str, Any]) -> plt.Figure:
-    """Bar chart comparing |SAC-0.5|, |BIC-SAC-0.5|, and S score across S-boxes."""
-    keys = ["aes_standard", "benchmark_sbox44", "custom_sbox"]
-    labels = ["AES Standar", "S-box44 (2025)", "Custom GA-SA"]
-    sac_dev = [abs(sbox_data[k]["metrics"]["sac"] - 0.5) for k in keys]
-    bic_dev = [abs(sbox_data[k]["metrics"]["bic_sac"] - 0.5) for k in keys]
-    s_scores = [sbox_data[k]["metrics"]["s_score"] for k in keys]
+def _plot_track_b_convergence(history: list[dict[str, Any]]) -> plt.Figure:
+    """Line chart of Track B Hybrid GA-SA convergence (S-score drop to 0.0)."""
+    iters = [h["iteration"] for h in history]
+    best_s = [h["best_s_score"] for h in history]
+    phases = [h["phase"] for h in history]
 
-    x = np.arange(len(labels))
-    width = 0.25
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    ax.plot(iters, best_s, color="#0ea5e9", linewidth=2.0, label="Best S Score")
 
-    fig, ax = plt.subplots(figsize=(6.5, 3.8))
-    ax.bar(x - width, sac_dev, width, label="|SAC - 0.5|", color="#3b82f6")
-    ax.bar(x, bic_dev, width, label="|BIC-SAC - 0.5|", color="#8b5cf6")
-    ax.bar(x + width, s_scores, width, label="Skor Komposit (S)", color="#10b981")
+    if "SA" in phases:
+        sa_start_iter = iters[phases.index("SA")]
+        ax.axvline(sa_start_iter, color="#f59e0b", linestyle="--", linewidth=1.3, label="Transisi GA -> SA")
 
-    ax.axhline(TARGET_METRICS["S_MAX"], color="#ef4444", linestyle="--", linewidth=1.2, label="Batas S <= 0.0040")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.set_ylabel("Deviasi (Lebih Kecil Lebih Baik)")
-    ax.set_title("Perbandingan Deviasi SAC, BIC-SAC, dan Skor Komposit S")
-    ax.grid(axis="y", alpha=0.25)
+    ax.set_xlabel("Iterasi (Generasi GA / Langkah SA)")
+    ax.set_ylabel("Best Skor Komposit (S)")
+    ax.set_title("Track B: Konvergensi Hybrid GA-SA (Ruang GL(8, 2))")
+    ax.grid(True, alpha=0.25)
     ax.legend(fontsize=8)
     fig.tight_layout()
     return fig
 
 
-def _plot_convergence_history(history: list[dict[str, Any]]) -> plt.Figure:
-    """Line chart of Hybrid GA-SA convergence across GA and SA phases."""
-    iters = [h["iteration"] for h in history]
-    best_s = [h["best_s_score"] for h in history]
-    phases = [h["phase"] for h in history]
+def _plot_track_a_convergence(history: list[dict[str, Any]], init_nl: int) -> plt.Figure:
+    """Line chart of Track A Non-Algebraic WHS-SA NL climb from random permutation."""
+    iters = [0] + [h["iteration"] for h in history]
+    coord_nl = [init_nl] + [h["best_coord_nl"] for h in history]
+    all_nl = [init_nl] + [h["best_nl_all"] for h in history]
 
-    fig, ax = plt.subplots(figsize=(6.5, 3.8))
-    ax.plot(iters, best_s, color="#0ea5e9", linewidth=2.0, label="Best S Score")
-
-    if "SA" in phases:
-        first_sa_idx = phases.index("SA")
-        sa_start_iter = iters[first_sa_idx]
-        ax.axvline(sa_start_iter, color="#f59e0b", linestyle="--", linewidth=1.3, label="Transisi GA -> SA")
-
-    ax.set_xlabel("Iterasi (Generasi GA / Langkah SA)")
-    ax.set_ylabel("Best Skor Komposit (S)")
-    ax.set_title("Kurva Konvergensi Hybrid GA-SA")
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    ax.plot(iters, coord_nl, color="#10b981", linewidth=2.0, label="Best Coord NL (min f0..f7)")
+    ax.plot(iters, all_nl, color="#8b5cf6", linewidth=1.6, linestyle="--", label="Best All-Mask NL (255 mask)")
+    ax.set_xlabel("Langkah Simulated Annealing (Swap)")
+    ax.set_ylabel("Nonlinearity (NL)")
+    ax.set_title("Track A: Konvergensi Non-Aljabar WHS-SA (Tanpa GF(2^8))")
     ax.grid(True, alpha=0.25)
     ax.legend(fontsize=8)
     fig.tight_layout()
@@ -209,7 +202,7 @@ def _plot_image_benchmark(rows: list[dict[str, Any]], title_prefix: str) -> plt.
         axes[0].axhline(TARGET_IMAGE_METRICS["ENTROPY"], color="#ef4444", linestyle="--", linewidth=1.1, label="Ideal 8.0")
         axes[0].set_ylim(7.90, 8.01)
         axes[0].set_xticks(x)
-        axes[0].set_xticklabels(labels, rotation=20, ha="right", fontsize=7.5)
+        axes[0].set_xticklabels(labels, rotation=20, ha="right", fontsize=7.2)
         axes[0].set_title(f"{title_prefix} — Entropi CBC")
         axes[0].grid(axis="y", alpha=0.25)
         axes[0].legend(fontsize=8)
@@ -219,7 +212,7 @@ def _plot_image_benchmark(rows: list[dict[str, Any]], title_prefix: str) -> plt.
         axes[1].axhline(TARGET_IMAGE_METRICS["NPCR"], color="#1d4ed8", linestyle=":", linewidth=1.1)
         axes[1].axhline(TARGET_IMAGE_METRICS["UACI"], color="#b45309", linestyle=":", linewidth=1.1)
         axes[1].set_xticks(x)
-        axes[1].set_xticklabels(labels, rotation=20, ha="right", fontsize=7.5)
+        axes[1].set_xticklabels(labels, rotation=20, ha="right", fontsize=7.2)
         axes[1].set_title(f"{title_prefix} — NPCR & UACI CBC")
         axes[1].grid(axis="y", alpha=0.25)
         axes[1].legend(fontsize=8)
@@ -230,15 +223,15 @@ def _plot_image_benchmark(rows: list[dict[str, Any]], title_prefix: str) -> plt.
 
 def main() -> None:
     st.set_page_config(
-        page_title="AES S-box ML & Image Cryptography Lab",
+        page_title="Dual-Track AES S-box ML & Image Cryptography Lab",
         page_icon="🔐",
         layout="wide",
     )
 
-    st.title("Konstruksi S-box AES dengan Machine Learning & Enkripsi Citra Digital")
+    st.title("Konstruksi S-box AES Dual-Track (Non-Aljabar & Hybrid GA-SA) + Evaluasi Citra")
     st.caption(
-        "Proyek UAS Kriptografi — Hybrid GA-SA di GL(8, 2) (Rujukan: Alamsyah et al., 2025) | "
-        "AES-128 Custom Mode CBC & CTR"
+        "Track A: Optimasi Permutasi Non-Aljabar Murni (WHS-SA, tanpa GF(2^8)) | "
+        "Track B: Hybrid GA-SA di GL(8, 2) (Alamsyah et al., 2025) | AES-128 CBC & CTR"
     )
 
     sbox_data = load_json_cached(str(SBOX_RESULTS_PATH))
@@ -251,74 +244,91 @@ def main() -> None:
 
     real_eval_data = load_json_cached(str(REAL_EVAL_RESULTS_PATH))
     sample_eval_data = load_json_cached(str(IMAGE_EVAL_RESULTS_PATH))
+    available_sboxes = [k for k in SBOX_LABELS if k in sbox_data]
 
     with st.sidebar:
-        st.header("Konfigurasi Proyek")
+        st.header("Konfigurasi Dual-Track")
         st.markdown(
-            f"- **Galois Field:** `GF(2^8)` (`0x{IRREDUCIBLE_POLY:03X}`)\n"
-            f"- **Algoritma:** {sbox_data['metadata'].get('algorithm', 'Hybrid GA-SA')}\n"
+            f"- **Track A (Non-Aljabar):** WHS-SA di ruang permutasi $S_{{256}}$ (tanpa polinomial/matriks afin)\n"
+            f"- **Track B (Aljabar):** Hybrid GA-SA di $\\mathrm{{GL}}(8,2)$ (`0x{IRREDUCIBLE_POLY:03X}`)\n"
             f"- **Locked Seed:** `{sbox_data['metadata'].get('seed', RANDOM_SEED)}`\n"
-            f"- **Runtime Optimasi:** `{sbox_data['metadata'].get('runtime_seconds', 0.0):.3f} s`\n"
+            f"- **Runtime Track A / B:** `{sbox_data['metadata'].get('non_algebraic_runtime_seconds', 0.0):.2f}s` / "
+            f"`{sbox_data['metadata'].get('runtime_seconds', 0.0):.2f}s`\n"
             f"- **Mode AES Diizinkan:** `{', '.join(ALLOWED_AES_MODES)}` (ECB dilarang)"
         )
         st.divider()
         st.info(
-            "Gunakan tab **Enkripsi & Dekripsi Citra Real-Time** untuk mengunggah gambar, "
-            "memilih S-box & mode CBC/CTR, dan memverifikasi dekripsi 100% lossless."
+            "Dual-Track membandingkan konstruksi S-box **murni tanpa aljabar** (belajar dari nol) "
+            "melawan **Hybrid GA-SA** berbasis transformasi afin."
         )
 
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
-            "1. Ringkasan & Metrik S-box",
-            "2. Tabel S-box 16×16 & Analisis SAC",
-            "3. Enkripsi & Dekripsi Citra Real-Time",
-            "4. Benchmark Enkripsi Citra",
+            "1. Ringkasan & Dual-Track",
+            "2. Tabel S-box 16×16 & Audit",
+            "3. Enkripsi Citra Real-Time",
+            "4. Demo Teks & Bit Avalanche",
+            "5. Benchmark Citra",
         ]
     )
 
     # ------------------------------------------------------------------
-    # TAB 1: Ringkasan & Metrik S-box
+    # TAB 1: Ringkasan & Dual-Track Optimasi
     # ------------------------------------------------------------------
     with tab1:
         custom_m = sbox_data["custom_sbox"]["metrics"]
-        aes_m = sbox_data["aes_standard"]["metrics"]
+        non_alg_m = sbox_data.get("non_algebraic_sbox", {}).get("metrics")
+        rand_perm_m = sbox_data.get("random_permutation", {}).get("metrics")
+        rand_bench = sbox_data.get("random_search_benchmark")
 
-        st.subheader("Performa S-box Optimal (Hybrid GA-SA)")
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-        c1.metric("Nonlinearity (NL)", f"{custom_m['nl']}", delta="Target >= 112")
-        c2.metric("SAC (Mean)", f"{custom_m['sac']:.5f}", delta=f"{custom_m['sac'] - aes_m['sac']:+.5f} vs AES")
-        c3.metric("BIC-NL", f"{custom_m['bic_nl']}", delta="Target >= 112")
-        c4.metric("BIC-SAC (Mean)", f"{custom_m['bic_sac']:.5f}", delta=f"{custom_m['bic_sac'] - aes_m['bic_sac']:+.5f} vs AES")
-        c5.metric("Skor Komposit (S)", f"{custom_m['s_score']:.6f}", delta=f"{custom_m['s_score'] - aes_m['s_score']:+.6f} vs AES")
-        c6.metric(
-            "Fixed / Opp. Fixed",
-            f"{custom_m['fixed_points']} / {custom_m['opposite_fixed_points']}",
-            delta=f"C = {sbox_data['custom_sbox']['affine_constant_hex']}",
-        )
+        st.subheader("Ringkasan Dual-Track Optimasi S-box")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("#### Track A — Non-Aljabar Murni (WHS-SA)")
+            if non_alg_m and rand_perm_m:
+                a1, a2, a3 = st.columns(3)
+                a1.metric("NL (min)", f"{non_alg_m['nl']}", delta=f"+{non_alg_m['nl'] - rand_perm_m['nl']} dari Acak ({rand_perm_m['nl']})")
+                a2.metric("BIC-NL", f"{non_alg_m['bic_nl']}", delta=f"+{non_alg_m['bic_nl'] - rand_perm_m['bic_nl']} dari Acak ({rand_perm_m['bic_nl']})")
+                a3.metric("LAP", f"{non_alg_m['lap']:.5f}", delta=f"{non_alg_m['lap'] - rand_perm_m['lap']:+.5f} vs Acak")
+                st.caption("Dibangun dari permutasi acak murni 0..255 tanpa polinomial GF(2^8) maupun matriks afin.")
+        with col_b:
+            st.markdown("#### Track B — Aljabar Hybrid GA-SA (GL(8, 2))")
+            b1, b2, b3 = st.columns(3)
+            b1.metric("NL / BIC-NL", f"{custom_m['nl']} / {custom_m['bic_nl']}", delta="Target >= 112")
+            b2.metric("Skor Komposit (S)", f"{custom_m['s_score']:.6f}", delta="SAC=0.5, BIC-SAC=0.5")
+            b3.metric("Fixed / Opp. Fixed", f"{custom_m['fixed_points']} / {custom_m['opposite_fixed_points']}", delta=f"C = {sbox_data['custom_sbox']['affine_constant_hex']}")
+            if rand_bench:
+                st.caption(
+                    f"Fair-Budget Benchmark ({rand_bench['budget']} evals): Hybrid GA-SA S={custom_m['s_score']:.6f} "
+                    f"vs Random GL(8,2) Mean S={rand_bench['mean_s_score']:.6f}."
+                )
 
-        st.subheader("Perbandingan Metrik Kriptografi")
-        comp_df = pd.DataFrame(sbox_data["comparison_summary"])
-        st.dataframe(comp_df, width="stretch", hide_index=True)
+        st.subheader("Tabel Komparasi 5 S-box Lengkap")
+        st.dataframe(pd.DataFrame(sbox_data["comparison_summary"]), width="stretch", hide_index=True)
 
-        col_l, col_r = st.columns(2)
-        with col_l:
-            fig_dev = _plot_sbox_deviation_comparison(sbox_data)
-            st.pyplot(fig_dev, width="stretch")
-            plt.close(fig_dev)
-        with col_r:
-            fig_conv = _plot_convergence_history(sbox_data["convergence_history"])
-            st.pyplot(fig_conv, width="stretch")
-            plt.close(fig_conv)
+        c_left, c_right = st.columns(2)
+        with c_left:
+            if "non_algebraic_convergence_history" in sbox_data and rand_perm_m:
+                fig_a = _plot_track_a_convergence(
+                    sbox_data["non_algebraic_convergence_history"],
+                    init_nl=int(rand_perm_m["nl"]),
+                )
+                st.pyplot(fig_a, width="stretch")
+                plt.close(fig_a)
+        with c_right:
+            fig_b = _plot_track_b_convergence(sbox_data["convergence_history"])
+            st.pyplot(fig_b, width="stretch")
+            plt.close(fig_b)
 
     # ------------------------------------------------------------------
-    # TAB 2: Tabel S-box 16x16 & Analisis SAC
+    # TAB 2: Tabel S-box 16x16 & Audit Kriptografi Lengkap
     # ------------------------------------------------------------------
     with tab2:
         sel_col1, sel_col2 = st.columns([2, 1])
         with sel_col1:
             selected_sbox_key = st.selectbox(
                 "Pilih S-box untuk Diinspeksi",
-                options=list(SBOX_LABELS.keys()),
+                options=available_sboxes,
                 format_func=lambda k: SBOX_LABELS[k],
             )
         with sel_col2:
@@ -327,11 +337,15 @@ def main() -> None:
         entry = sbox_data[selected_sbox_key]
         metrics_entry = entry["metrics"]
 
-        b1, b2, b3, b4 = st.columns(4)
-        b1.metric("Bijective (256 Unik)", "Valid" if metrics_entry["bijective"] else "Tidak")
-        b2.metric("Balance (128:128)", "Valid" if metrics_entry["balanced"] else "Tidak")
-        b3.metric("Konstanta Afin (C)", f"{entry['affine_constant_hex']} ({entry['affine_constant']})")
-        b4.metric("Strength Value (SV)", f"{metrics_entry['sv_score']:.5f}")
+        b1, b2, b3, b4, b5, b6 = st.columns(6)
+        b1.metric("Bijective / Balance", "Valid" if metrics_entry["valid"] else "Tidak")
+        b2.metric("NL / BIC-NL", f"{metrics_entry['nl']} / {metrics_entry['bic_nl']}")
+        b3.metric("Diff. Uniformity (DU)", f"{metrics_entry.get('du', '-')}")
+        b4.metric("Alg. Degree (min/max)", f"{metrics_entry.get('algebraic_degree_min', '-')}/{metrics_entry.get('algebraic_degree_max', '-')}")
+        b5.metric("Cycles (Count)", f"{metrics_entry.get('num_cycles', '-')}")
+        b6.metric("Konstanta Afin (C)", f"{entry['affine_constant_hex']}")
+
+        st.caption(f"Struktur Panjang Siklus: `{metrics_entry.get('cycles', [])}` | Fixed / Opp. Fixed: `{metrics_entry['fixed_points']} / {metrics_entry['opposite_fixed_points']}`")
 
         grid_sbox = entry["sbox_hex_16x16"] if display_fmt == "Heksadesimal" else entry["sbox_16x16"]
         inv_grid_raw = entry["inverse_sbox_16x16"]
@@ -350,18 +364,16 @@ def main() -> None:
             st.dataframe(_render_sbox_grid_df(grid_inv), width="stretch")
 
         dl1, dl2 = st.columns(2)
-        csv_bytes = _render_sbox_grid_df(grid_sbox).to_csv().encode("utf-8")
-        json_bytes = json.dumps(entry, indent=2).encode("utf-8")
         dl1.download_button(
             "Unduh Tabel S-box (.csv)",
-            data=csv_bytes,
+            data=_render_sbox_grid_df(grid_sbox).to_csv().encode("utf-8"),
             file_name=f"{selected_sbox_key}_16x16.csv",
             mime="text/csv",
             width="stretch",
         )
         dl2.download_button(
             "Unduh Spesifikasi Lengkap (.json)",
-            data=json_bytes,
+            data=json.dumps(entry, indent=2).encode("utf-8"),
             file_name=f"{selected_sbox_key}.json",
             mime="application/json",
             width="stretch",
@@ -370,16 +382,25 @@ def main() -> None:
         st.divider()
         a1, a2 = st.columns(2)
         with a1:
-            st.markdown("**Matriks Afin Biner $K \\in \\mathrm{GL}(8, 2)$**")
-            k_df = pd.DataFrame(
-                entry["affine_matrix"],
-                index=[f"r{i}" for i in range(8)],
-                columns=[f"c{j}" for j in range(8)],
-            )
-            st.dataframe(k_df, width="stretch")
-            st.markdown("**Nonlinearity per Bit Output ($f_0 \\dots f_7$)**")
+            if entry.get("affine_matrix") is not None:
+                st.markdown("**Matriks Afin Biner $K \\in \\mathrm{GL}(8, 2)$**")
+                k_df = pd.DataFrame(
+                    entry["affine_matrix"],
+                    index=[f"r{i}" for i in range(8)],
+                    columns=[f"c{j}" for j in range(8)],
+                )
+                st.dataframe(k_df, width="stretch")
+            else:
+                st.info("**Konstruksi Non-Aljabar Murni:** S-box ini tidak menggunakan matriks afin $K$ maupun polinomial $\\mathrm{GF}(2^8)$.")
+
+            st.markdown("**Nonlinearity & Algebraic Degree per Bit ($f_0 \\dots f_7$)**")
             nl_df = pd.DataFrame(
-                {"Bit": [f"f{i}" for i in range(8)], "NL": metrics_entry["nl_per_bit"], "Ones": metrics_entry["bit_ones_count"]}
+                {
+                    "Bit": [f"f{i}" for i in range(8)],
+                    "NL": metrics_entry["nl_per_bit"],
+                    "Degree": metrics_entry.get("algebraic_degrees", ["-"] * 8),
+                    "Ones": metrics_entry["bit_ones_count"],
+                }
             )
             st.dataframe(nl_df, width="stretch", hide_index=True)
         with a2:
@@ -410,7 +431,7 @@ def main() -> None:
         with ctrl2:
             rt_sbox_key = st.selectbox(
                 "S-box yang Digunakan",
-                options=list(SBOX_LABELS.keys()),
+                options=available_sboxes,
                 format_func=lambda k: SBOX_LABELS[k],
                 key="rt_sbox",
             )
@@ -434,7 +455,6 @@ def main() -> None:
         if key_warn:
             st.warning(key_warn)
 
-        # Resolve image array
         target_img: np.ndarray | None = None
         if img_source == "Citra Nyata Lena (foto_asli.jpg)":
             target_img = load_image_array(REAL_SAMPLE_IMAGE_PATH)
@@ -443,8 +463,7 @@ def main() -> None:
         elif img_source == "Sampel RGB Bawaan":
             target_img = generate_sample_images((256, 256))["rgb_sample"]
         elif uploaded_file is not None:
-            pil_img = Image.open(uploaded_file)
-            target_img = load_image_array(pil_img)
+            target_img = load_image_array(Image.open(uploaded_file))
 
         if target_img is None:
             st.info("Silakan unggah gambar `.png` atau `.jpg` untuk memulai pengujian.")
@@ -467,33 +486,30 @@ def main() -> None:
                     f"`Max Abs Diff = {res['max_abs_diff']}`, Shape = `{tuple(res['shape'])}`, "
                     f"IV/Nonce = `{res['iv_or_nonce_hex']}`)"
                 )
-            else:
-                st.error("Dekripsi tidak lossless!")
 
             im1, im2, im3 = st.columns(3)
-            with im1:
-                st.image(res["original_image"], caption="Citra Asli", width="stretch")
-            with im2:
-                st.image(res["encrypted_image"], caption=f"Citra Terenkripsi ({rt_mode})", width="stretch")
-            with im3:
-                st.image(res["decrypted_image"], caption="Citra Hasil Dekripsi", width="stretch")
+            im1.image(res["original_image"], caption="Citra Asli", width="stretch")
+            im2.image(res["encrypted_image"], caption=f"Citra Terenkripsi ({rt_mode})", width="stretch")
+            im3.image(res["decrypted_image"], caption="Citra Hasil Dekripsi", width="stretch")
 
+            wu = res["wu2011_test"]
             m1, m2, m3, m4, m5 = st.columns(5)
-            m1.metric("Entropi Asli", f"{res['entropy_original']:.5f}")
-            m2.metric("Entropi Terenkripsi", f"{res['entropy_encrypted']:.5f}", delta="Ideal ~ 8.0")
-            m3.metric("NPCR (1-Piksel Diff)", f"{res['npcr']:.4f}%")
-            m4.metric("UACI (1-Piksel Diff)", f"{res['uaci']:.4f}%")
-            m5.metric(
-                "Chi-Square (Mean)",
-                f"{res['chi_square_encrypted']['mean']:.1f}",
-                delta=f"Asli: {res['chi_square_original']['mean']:.1f}",
-            )
+            m1.metric("Entropi Asli -> Enkripsi", f"{res['entropy_encrypted']:.5f}", delta=f"Asli: {res['entropy_original']:.5f}")
+            m2.metric("NPCR (1-Piksel Diff)", f"{res['npcr']:.4f}%", delta=f"Wu2011: {'PASS' if wu['npcr_pass'] else 'FAIL'} (>={wu['npcr_critical']:.2f}%)")
+            m3.metric("UACI (1-Piksel Diff)", f"{res['uaci']:.4f}%", delta=f"Wu2011: {'PASS' if wu['uaci_pass'] else 'FAIL'} ([{wu['uaci_lower']:.2f}, {wu['uaci_upper']:.2f}])")
+            m4.metric("Chi-Square (Mean)", f"{res['chi_square_encrypted']['mean']:.1f}", delta=f"Asli: {res['chi_square_original']['mean']:.1f}")
+            m5.metric("Enc / Dec (ms)", f"{res['encryption_time_ms']:.1f} / {res['decryption_time_ms']:.1f}")
 
-            t1, t2, t3 = st.columns(3)
-            t1.caption(f"Waktu Enkripsi: `{res['encryption_time_ms']:.2f} ms` | Dekripsi: `{res['decryption_time_ms']:.2f} ms`")
-            t2.caption(f"NPCR Plain-vs-Cipher: `{res['npcr_plain_vs_cipher']:.4f}%` | UACI Plain-vs-Cipher: `{res['uaci_plain_vs_cipher']:.4f}%`")
-            if rt_mode == "CTR":
-                t3.caption("Catatan CTR: tanpa chaining antar-blok, perubahan 1 piksel pada nonce sama hanya mengubah 1 posisi byte (~0% NPCR diferensial).")
+            co, ce = res["correlation_original"], res["correlation_encrypted"]
+            corr_df = pd.DataFrame(
+                [
+                    {"Arah": "Horizontal", "Citra Asli": f"{co['horizontal']:+.5f}", "Citra Terenkripsi": f"{ce['horizontal']:+.5f}"},
+                    {"Arah": "Vertikal", "Citra Asli": f"{co['vertical']:+.5f}", "Citra Terenkripsi": f"{ce['vertical']:+.5f}"},
+                    {"Arah": "Diagonal", "Citra Asli": f"{co['diagonal']:+.5f}", "Citra Terenkripsi": f"{ce['diagonal']:+.5f}"},
+                ]
+            )
+            st.markdown("**Korelasi Piksel Bertetangga (Ideal Terenkripsi mendekati 0.0)**")
+            st.dataframe(corr_df, width="stretch", hide_index=True)
 
             h1, h2 = st.columns(2)
             with h1:
@@ -522,10 +538,54 @@ def main() -> None:
             )
 
     # ------------------------------------------------------------------
-    # TAB 4: Benchmark Enkripsi Citra
+    # TAB 4: Demo Enkripsi Teks & Bit Avalanche
     # ------------------------------------------------------------------
     with tab4:
-        st.subheader("Benchmark Performa Enkripsi Citra (AES Standar vs S-box44 vs Custom GA-SA)")
+        st.subheader("Demo Enkripsi & Dekripsi Teks — AES-128 Custom (CBC / CTR)")
+
+        tc1, tc2, tc3 = st.columns([1.4, 1.0, 1.0])
+        with tc1:
+            txt_sbox_key = st.selectbox(
+                "Pilih S-box",
+                options=available_sboxes,
+                format_func=lambda k: SBOX_LABELS[k],
+                key="txt_sbox",
+            )
+        with tc2:
+            txt_mode = st.radio("Mode AES", list(ALLOWED_AES_MODES), horizontal=True, key="txt_mode")
+        with tc3:
+            txt_pass = st.text_input("Passphrase Kunci (16-byte SHA-256)", value="kriptografi-unnes-2026", key="txt_pass")
+
+        sample_plain = st.text_area(
+            "Plaintext Uji",
+            value="Pengujian AES-128 dengan S-box hasil optimasi Dual-Track (Non-Aljabar & Hybrid GA-SA)!",
+            height=90,
+        )
+
+        txt_key = hashlib.sha256(txt_pass.encode("utf-8")).digest()[:16]
+        txt_sbox_arr = np.asarray(sbox_data[txt_sbox_key]["sbox_flat"], dtype=np.uint8)
+        txt_res = evaluate_text_encryption(
+            sample_plain,
+            key=txt_key,
+            sbox=txt_sbox_arr,
+            mode=txt_mode,
+            iv_or_nonce=bytes.fromhex(DEFAULT_IV_HEX),
+        )
+
+        tm1, tm2, tm3, tm4 = st.columns(4)
+        tm1.metric("Dekripsi Eksak", "100% Cocok" if txt_res["is_exact_match"] else "Gagal")
+        tm2.metric("Bit Avalanche (1-bit Flip)", f"{txt_res['bit_avalanche_pct']:.2f}%", delta=f"{txt_res['differing_bits']}/{txt_res['total_bits']} bit")
+        tm3.metric("Waktu Enkripsi", f"{txt_res['encryption_time_ms']:.3f} ms")
+        tm4.metric("Waktu Dekripsi", f"{txt_res['decryption_time_ms']:.3f} ms")
+
+        st.text_area("Ciphertext (Hex)", value=txt_res["ciphertext_hex"], height=90, disabled=True)
+        st.text_area("Hasil Dekripsi", value=txt_res["decrypted_text"], height=90, disabled=True)
+
+    # ------------------------------------------------------------------
+    # TAB 5: Benchmark Enkripsi Citra
+    # ------------------------------------------------------------------
+    with tab5:
+        st.subheader("Benchmark Performa Enkripsi Citra (Termasuk Non-Algebraic & Custom GA-SA)")
 
         if real_eval_data is not None:
             st.markdown("#### 1. Hasil Uji Citra Nyata (`data/samples/foto_asli.jpg` — Lena 258×258×3)")
@@ -533,8 +593,6 @@ def main() -> None:
             fig_real = _plot_image_benchmark(real_eval_data["summary_table"], "Lena")
             st.pyplot(fig_real, width="stretch")
             plt.close(fig_real)
-        else:
-            st.info("Belum ada data `data/image_eval_real.json`. Jalankan `python scripts/run_image_eval.py --image data/samples/foto_asli.jpg --output data/image_eval_real.json`.")
 
         if sample_eval_data is not None:
             st.markdown("#### 2. Hasil Uji Sampel Terstruktur (`grayscale_sample` & `rgb_sample` 128×128)")

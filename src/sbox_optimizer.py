@@ -379,3 +379,201 @@ def find_best_circulant_sbox(
     assert best_record is not None
     best_record["metrics"] = evaluate_sbox(best_record["sbox"], include_details=True)
     return best_record
+
+
+# Precompute 256x256 Walsh sign matrix: (-1)^parity(a & x)
+_PARITY_SIGN: np.ndarray = np.array(
+    [[1 if (bin(a & x).count("1") & 1) == 0 else -1 for x in range(256)] for a in range(256)],
+    dtype=np.int8,
+)
+_COORD_MASK_ROWS: np.ndarray = np.array([(1 << i) - 1 for i in range(8)], dtype=np.int64)
+
+
+@dataclass
+class NonAlgebraicOptimizationResult:
+    """Container for pure non-algebraic S-box optimization (no GF(2^8) or affine matrix)."""
+
+    initial_sbox: np.ndarray
+    initial_metrics: dict[str, Any]
+    sbox: np.ndarray
+    inverse_sbox: np.ndarray
+    metrics: dict[str, Any]
+    history: list[dict[str, Any]]
+    algorithm: str
+    seed: int
+    runtime_seconds: float
+    hyperparameters: dict[str, Any]
+
+
+class NonAlgebraicWHSOptimizer:
+    """Pure non-algebraic Simulated Annealing using Clark's WHS spectral cost."""
+
+    def __init__(
+        self,
+        seed: int = RANDOM_SEED,
+        steps: int = 12000,
+        whs_power: float = 12.0,
+    ) -> None:
+        self.seed = seed
+        self.steps = steps
+        self.whs_power = whs_power
+
+    def optimize(self) -> NonAlgebraicOptimizationResult:
+        """Optimize a random permutation directly via incremental WHT swap updates."""
+        start_time = time.perf_counter()
+        rng = np.random.default_rng(self.seed)
+
+        initial_sbox = rng.permutation(256).astype(np.uint8)
+        initial_metrics = evaluate_sbox(initial_sbox, include_details=True)
+
+        lut = (np.arange(257, dtype=np.float64)) ** self.whs_power
+        sbox = initial_sbox.copy()
+
+        # Full Walsh-Hadamard Table W of shape (255, 256) for output masks 1..255
+        p_b = _PARITY_SIGN[1:, sbox].astype(np.int32)
+        w_table = (p_b @ _PARITY_SIGN.T).astype(np.int16)
+        current_cost = float(lut[np.abs(w_table)].sum())
+        current_max_w = int(np.abs(w_table).max())
+
+        # Calibrate initial temperature dynamically from 100 probe swaps
+        probe_deltas: list[float] = []
+        for _ in range(100):
+            u, v = rng.choice(256, size=2, replace=False)
+            y_u, y_v = int(sbox[u]), int(sbox[v])
+            dy = (_PARITY_SIGN[1:, y_v] - _PARITY_SIGN[1:, y_u]).astype(np.int16)
+            dx = (_PARITY_SIGN[u, :] - _PARITY_SIGN[v, :]).astype(np.int16)
+            bm = dy != 0
+            am = dx != 0
+            sub_old = w_table[np.ix_(bm, am)]
+            sub_new = sub_old + np.outer(dy[bm], dx[am])
+            delta_c = abs(float(lut[np.abs(sub_new)].sum() - lut[np.abs(sub_old)].sum()))
+            if delta_c > 0.0:
+                probe_deltas.append(delta_c)
+
+        med_delta = float(np.median(probe_deltas)) if probe_deltas else 1.0
+        initial_temp = max(med_delta / 0.693, 1.0)
+        cooling_rate = 0.0005 ** (1.0 / max(self.steps, 1))
+        temperature = initial_temp
+
+        best_sbox = sbox.copy()
+        best_cost = current_cost
+        best_max_w = current_max_w
+        best_coord_nl = int(128 - int(np.abs(w_table[_COORD_MASK_ROWS]).max()) // 2)
+
+        history: list[dict[str, Any]] = []
+        log_interval = max(self.steps // 60, 1)
+
+        for step in range(1, self.steps + 1):
+            u = int(rng.integers(0, 256))
+            v = int(rng.integers(0, 255))
+            if v >= u:
+                v += 1
+
+            y_u, y_v = int(sbox[u]), int(sbox[v])
+            dy = (_PARITY_SIGN[1:, y_v] - _PARITY_SIGN[1:, y_u]).astype(np.int16)
+            dx = (_PARITY_SIGN[u, :] - _PARITY_SIGN[v, :]).astype(np.int16)
+            bm = dy != 0
+            am = dx != 0
+
+            sub_old = w_table[np.ix_(bm, am)]
+            sub_new = sub_old + np.outer(dy[bm], dx[am])
+            delta_cost = float(lut[np.abs(sub_new)].sum() - lut[np.abs(sub_old)].sum())
+
+            accept = delta_cost <= 0.0 or (
+                temperature > 1e-12 and rng.random() < math.exp(-delta_cost / temperature)
+            )
+            if accept:
+                w_table[np.ix_(bm, am)] = sub_new
+                sbox[u], sbox[v] = sbox[v], sbox[u]
+                current_cost += delta_cost
+                current_max_w = int(np.abs(w_table).max())
+
+                if (current_max_w < best_max_w) or (
+                    current_max_w == best_max_w and current_cost < best_cost
+                ):
+                    best_max_w = current_max_w
+                    best_cost = current_cost
+                    best_sbox = sbox.copy()
+                    best_coord_nl = int(128 - int(np.abs(w_table[_COORD_MASK_ROWS]).max()) // 2)
+
+            if step % log_interval == 0 or step == self.steps:
+                cur_nl_all = int(128 - current_max_w // 2)
+                best_nl_all = int(128 - best_max_w // 2)
+                history.append(
+                    {
+                        "iteration": step,
+                        "temperature": float(temperature),
+                        "current_nl_all": cur_nl_all,
+                        "best_nl_all": best_nl_all,
+                        "best_coord_nl": best_coord_nl,
+                        "best_lap": float(best_max_w / 512.0),
+                        "best_whs_cost": float(best_cost),
+                    }
+                )
+
+            temperature *= cooling_rate
+
+        final_inv_sbox = build_inverse_sbox(best_sbox)
+        final_metrics = evaluate_sbox(best_sbox, include_details=True)
+        runtime_seconds = time.perf_counter() - start_time
+
+        return NonAlgebraicOptimizationResult(
+            initial_sbox=initial_sbox,
+            initial_metrics=initial_metrics,
+            sbox=best_sbox,
+            inverse_sbox=final_inv_sbox,
+            metrics=final_metrics,
+            history=history,
+            algorithm="Non-Algebraic WHS Simulated Annealing (Permutation Space, Zero GF(2^8))",
+            seed=self.seed,
+            runtime_seconds=float(runtime_seconds),
+            hyperparameters={
+                "steps": self.steps,
+                "whs_power": self.whs_power,
+                "initial_temp": float(initial_temp),
+                "cooling_rate": float(cooling_rate),
+            },
+        )
+
+
+def run_random_search_benchmark(
+    poly: int = IRREDUCIBLE_POLY,
+    seed: int = RANDOM_SEED,
+    budget: int = GA_POPULATION_SIZE * GA_GENERATIONS + SA_STEPS,
+    sac_std_weight: float = SAC_STD_TIEBREAKER_WEIGHT,
+) -> dict[str, Any]:
+    """Sample `budget` random invertible GL(8, 2) matrices as a fair baseline vs Hybrid GA-SA."""
+    start_time = time.perf_counter()
+    rng = np.random.default_rng(seed + 1000)
+    inv_table = generate_inverse_table(poly)
+
+    best_loss = float("inf")
+    best_s = float("inf")
+    best_sac = 0.0
+    best_bic_sac = 0.0
+    best_sac_std = 0.0
+    s_scores: list[float] = []
+
+    for _ in range(budget):
+        mat = random_invertible_matrix(rng)
+        sbox = build_sbox(mat, constant=DEFAULT_AFFINE_CONSTANT, poly=poly, inv_table=inv_table)
+        sac, bic_sac, s_score, sac_std = evaluate_fast_sac_metrics(sbox)
+        loss = s_score + sac_std_weight * sac_std
+        s_scores.append(float(s_score))
+        if loss < best_loss:
+            best_loss = float(loss)
+            best_s = float(s_score)
+            best_sac = float(sac)
+            best_bic_sac = float(bic_sac)
+            best_sac_std = float(sac_std)
+
+    return {
+        "budget": int(budget),
+        "best_s_score": best_s,
+        "mean_s_score": float(np.mean(s_scores)) if s_scores else 0.0,
+        "best_loss": best_loss,
+        "best_sac": best_sac,
+        "best_bic_sac": best_bic_sac,
+        "best_sac_std": best_sac_std,
+        "runtime_seconds": float(time.perf_counter() - start_time),
+    }

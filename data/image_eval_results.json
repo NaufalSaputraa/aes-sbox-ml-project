@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at_utc": "2026-11-25T00:49:45.714607+00:00",
+    "generated_at_utc": "2026-11-25T02:37:12.806758+00:00",
     "seed": 42,
     "key_hex": "8826d916cdfb21c6c1ff91a761565a70",
     "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
@@ -20,10 +20,10 @@
       "Entropy(Enc)": "7.99003",
       "NPCR(%)": "99.5667",
       "UACI(%)": "33.4003",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "+0.005/-0.010/-0.008",
       "Chi2(Enc)": "226.2",
-      "Enc(ms)": "14.89",
-      "Dec(ms)": "2.46"
+      "Enc(ms)": "17.53"
     },
     {
       "Image": "grayscale_sample",
@@ -34,10 +34,10 @@
       "Entropy(Enc)": "7.98825",
       "NPCR(%)": "99.5605",
       "UACI(%)": "33.5748",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "-0.006/+0.027/+0.014",
       "Chi2(Enc)": "267.7",
-      "Enc(ms)": "14.64",
-      "Dec(ms)": "2.38"
+      "Enc(ms)": "20.99"
     },
     {
       "Image": "grayscale_sample",
@@ -48,10 +48,24 @@
       "Entropy(Enc)": "7.98902",
       "NPCR(%)": "99.6033",
       "UACI(%)": "33.5460",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "-0.012/-0.010/-0.028",
       "Chi2(Enc)": "248.2",
-      "Enc(ms)": "14.80",
-      "Dec(ms)": "2.43"
+      "Enc(ms)": "16.82"
+    },
+    {
+      "Image": "grayscale_sample",
+      "Mode": "CBC",
+      "S-box": "non_algebraic_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.63917",
+      "Entropy(Enc)": "7.98768",
+      "NPCR(%)": "99.7253",
+      "UACI(%)": "33.8053",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "+0.004/+0.003/-0.012",
+      "Chi2(Enc)": "279.5",
+      "Enc(ms)": "15.09"
     },
     {
       "Image": "grayscale_sample",
@@ -62,10 +76,10 @@
       "Entropy(Enc)": "7.98855",
       "NPCR(%)": "0.0061",
       "UACI(%)": "0.0000",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "-0.008/-0.001/+0.017",
       "Chi2(Enc)": "262.0",
-      "Enc(ms)": "2.49",
-      "Dec(ms)": "2.31"
+      "Enc(ms)": "2.11"
     },
     {
       "Image": "grayscale_sample",
@@ -76,10 +90,10 @@
       "Entropy(Enc)": "7.98913",
       "NPCR(%)": "0.0061",
       "UACI(%)": "0.0001",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "-0.001/-0.006/+0.013",
       "Chi2(Enc)": "246.9",
-      "Enc(ms)": "2.33",
-      "Dec(ms)": "2.12"
+      "Enc(ms)": "2.06"
     },
     {
       "Image": "grayscale_sample",
@@ -90,10 +104,24 @@
       "Entropy(Enc)": "7.98761",
       "NPCR(%)": "0.0061",
       "UACI(%)": "0.0001",
-      "Chi2(Orig)": "19781.3",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "+0.004/+0.001/+0.017",
       "Chi2(Enc)": "281.0",
-      "Enc(ms)": "2.44",
-      "Dec(ms)": "2.73"
+      "Enc(ms)": "2.13"
+    },
+    {
+      "Image": "grayscale_sample",
+      "Mode": "CTR",
+      "S-box": "non_algebraic_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.63917",
+      "Entropy(Enc)": "7.98877",
+      "NPCR(%)": "0.0061",
+      "UACI(%)": "0.0001",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "-0.001/-0.025/-0.018",
+      "Chi2(Enc)": "255.9",
+      "Enc(ms)": "2.12"
     },
     {
       "Image": "rgb_sample",
@@ -104,10 +132,10 @@
       "Entropy(Enc)": "7.99611",
       "NPCR(%)": "99.6114",
       "UACI(%)": "33.3266",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "+0.004/+0.007/-0.004",
       "Chi2(Enc)": "268.6",
-      "Enc(ms)": "42.67",
-      "Dec(ms)": "6.94"
+      "Enc(ms)": "44.49"
     },
     {
       "Image": "rgb_sample",
@@ -118,10 +146,10 @@
       "Entropy(Enc)": "7.99596",
       "NPCR(%)": "99.6521",
       "UACI(%)": "33.4558",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "+0.005/-0.004/+0.005",
       "Chi2(Enc)": "261.9",
-      "Enc(ms)": "43.11",
-      "Dec(ms)": "6.97"
+      "Enc(ms)": "54.20"
     },
     {
       "Image": "rgb_sample",
@@ -132,10 +160,24 @@
       "Entropy(Enc)": "7.99540",
       "NPCR(%)": "99.5707",
       "UACI(%)": "33.4328",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "-0.009/+0.012/+0.003",
       "Chi2(Enc)": "265.6",
-      "Enc(ms)": "42.73",
-      "Dec(ms)": "6.54"
+      "Enc(ms)": "44.03"
+    },
+    {
+      "Image": "rgb_sample",
+      "Mode": "CBC",
+      "S-box": "non_algebraic_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47774",
+      "Entropy(Enc)": "7.99606",
+      "NPCR(%)": "99.6379",
+      "UACI(%)": "33.2610",
+      "Wu2011": "PASS/PASS",
+      "Corr(Enc H/V/D)": "+0.004/-0.002/-0.003",
+      "Chi2(Enc)": "261.9",
+      "Enc(ms)": "45.49"
     },
     {
       "Image": "rgb_sample",
@@ -146,10 +188,10 @@
       "Entropy(Enc)": "7.99598",
       "NPCR(%)": "0.0020",
       "UACI(%)": "0.0000",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "+0.006/+0.005/-0.005",
       "Chi2(Enc)": "271.7",
-      "Enc(ms)": "6.46",
-      "Dec(ms)": "6.47"
+      "Enc(ms)": "6.96"
     },
     {
       "Image": "rgb_sample",
@@ -160,10 +202,10 @@
       "Entropy(Enc)": "7.99631",
       "NPCR(%)": "0.0020",
       "UACI(%)": "0.0000",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "-0.000/+0.000/-0.018",
       "Chi2(Enc)": "257.2",
-      "Enc(ms)": "5.80",
-      "Dec(ms)": "6.33"
+      "Enc(ms)": "5.60"
     },
     {
       "Image": "rgb_sample",
@@ -174,10 +216,24 @@
       "Entropy(Enc)": "7.99702",
       "NPCR(%)": "0.0020",
       "UACI(%)": "0.0000",
-      "Chi2(Orig)": "69211.6",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "-0.005/-0.001/+0.002",
       "Chi2(Enc)": "265.6",
-      "Enc(ms)": "6.31",
-      "Dec(ms)": "6.67"
+      "Enc(ms)": "8.49"
+    },
+    {
+      "Image": "rgb_sample",
+      "Mode": "CTR",
+      "S-box": "non_algebraic_sbox",
+      "Lossless": true,
+      "Entropy(Orig)": "7.47774",
+      "Entropy(Enc)": "7.99623",
+      "NPCR(%)": "0.0020",
+      "UACI(%)": "0.0000",
+      "Wu2011": "FAIL/FAIL",
+      "Corr(Enc H/V/D)": "+0.000/-0.000/-0.006",
+      "Chi2(Enc)": "247.0",
+      "Enc(ms)": "6.67"
     }
   ],
   "results": {
@@ -203,8 +259,28 @@
           },
           "npcr": 99.566650390625,
           "uaci": 33.4002565870098,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.566650390625,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": true,
+            "uaci": 33.4002565870098,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.603271484375,
           "uaci_plain_vs_cipher": 30.334257238051464,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.004720289500764132,
+            "vertical": -0.010176639498073237,
+            "diagonal": -0.00765972613775682
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -213,8 +289,8 @@
             "Gray": 226.21875,
             "mean": 226.21875
           },
-          "encryption_time_ms": 14.893000000029133,
-          "decryption_time_ms": 2.4576999999226246
+          "encryption_time_ms": 17.5292999992962,
+          "decryption_time_ms": 4.273599999578437
         },
         "benchmark_sbox44": {
           "mode": "CBC",
@@ -236,8 +312,28 @@
           },
           "npcr": 99.560546875,
           "uaci": 33.57479319852941,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.560546875,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": true,
+            "uaci": 33.57479319852941,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.609375,
           "uaci_plain_vs_cipher": 30.797885071997555,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.005716357956979097,
+            "vertical": 0.026721821235315624,
+            "diagonal": 0.013990179697897039
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -246,8 +342,8 @@
             "Gray": 267.6875,
             "mean": 267.6875
           },
-          "encryption_time_ms": 14.640700000200013,
-          "decryption_time_ms": 2.3762999999235035
+          "encryption_time_ms": 20.989999999073916,
+          "decryption_time_ms": 4.2530000009719515
         },
         "custom_sbox": {
           "mode": "CBC",
@@ -269,8 +365,28 @@
           },
           "npcr": 99.603271484375,
           "uaci": 33.545998965992645,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.603271484375,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": true,
+            "uaci": 33.545998965992645,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.5849609375,
           "uaci_plain_vs_cipher": 30.672344132965684,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.011641431473093438,
+            "vertical": -0.00983512321479433,
+            "diagonal": -0.02792950488139855
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -279,8 +395,61 @@
             "Gray": 248.1875,
             "mean": 248.1875
           },
-          "encryption_time_ms": 14.80489999994461,
-          "decryption_time_ms": 2.4257999998553714
+          "encryption_time_ms": 16.823600000861916,
+          "decryption_time_ms": 4.114999999728752
+        },
+        "non_algebraic_sbox": {
+          "mode": "CBC",
+          "shape": [
+            128,
+            128
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.639170568069655,
+          "entropy_encrypted": 7.987675734572946,
+          "channel_entropy_original": {
+            "Gray": 7.639170568069655
+          },
+          "channel_entropy_encrypted": {
+            "Gray": 7.987675734572946
+          },
+          "npcr": 99.725341796875,
+          "uaci": 33.805290670955884,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.725341796875,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": true,
+            "uaci": 33.805290670955884,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": true
+          },
+          "npcr_plain_vs_cipher": 99.578857421875,
+          "uaci_plain_vs_cipher": 30.574376723345587,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.0038580400776048775,
+            "vertical": 0.0028907740473024844,
+            "diagonal": -0.012399934196710035
+          },
+          "chi_square_original": {
+            "Gray": 19781.34375,
+            "mean": 19781.34375
+          },
+          "chi_square_encrypted": {
+            "Gray": 279.53125,
+            "mean": 279.53125
+          },
+          "encryption_time_ms": 15.08550000107789,
+          "decryption_time_ms": 2.4635999998281477
         }
       },
       "CTR": {
@@ -304,8 +473,28 @@
           },
           "npcr": 0.006103515625,
           "uaci": 2.3935355392156862e-05,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.006103515625,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": false,
+            "uaci": 2.3935355392156862e-05,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.615478515625,
           "uaci_plain_vs_cipher": 30.640438304227946,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.008058551464786172,
+            "vertical": -0.0006135197016516502,
+            "diagonal": 0.016932786634136526
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -314,8 +503,8 @@
             "Gray": 262.03125,
             "mean": 262.03125
           },
-          "encryption_time_ms": 2.494299999852956,
-          "decryption_time_ms": 2.3118999997677747
+          "encryption_time_ms": 2.1060999988549156,
+          "decryption_time_ms": 2.1667000000888947
         },
         "benchmark_sbox44": {
           "mode": "CTR",
@@ -337,8 +526,28 @@
           },
           "npcr": 0.006103515625,
           "uaci": 7.180606617647059e-05,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.006103515625,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": false,
+            "uaci": 7.180606617647059e-05,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.615478515625,
           "uaci_plain_vs_cipher": 30.31139897365196,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.0010845828226768654,
+            "vertical": -0.0057385483770369065,
+            "diagonal": 0.013103157490526745
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -347,8 +556,8 @@
             "Gray": 246.9375,
             "mean": 246.9375
           },
-          "encryption_time_ms": 2.3257999996531,
-          "decryption_time_ms": 2.116199999818491
+          "encryption_time_ms": 2.058099998976104,
+          "decryption_time_ms": 2.0965999992768047
         },
         "custom_sbox": {
           "mode": "CTR",
@@ -370,8 +579,28 @@
           },
           "npcr": 0.006103515625,
           "uaci": 0.00011967677696078431,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.006103515625,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": false,
+            "uaci": 0.00011967677696078431,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.64599609375,
           "uaci_plain_vs_cipher": 30.80966126685049,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.0036742446873721368,
+            "vertical": 0.000678716810991067,
+            "diagonal": 0.01698062000863312
+          },
           "chi_square_original": {
             "Gray": 19781.34375,
             "mean": 19781.34375
@@ -380,8 +609,61 @@
             "Gray": 280.96875,
             "mean": 280.96875
           },
-          "encryption_time_ms": 2.435899999909452,
-          "decryption_time_ms": 2.72610000001805
+          "encryption_time_ms": 2.128199999788194,
+          "decryption_time_ms": 2.0755999994435115
+        },
+        "non_algebraic_sbox": {
+          "mode": "CTR",
+          "shape": [
+            128,
+            128
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.639170568069655,
+          "entropy_encrypted": 7.988771246439409,
+          "channel_entropy_original": {
+            "Gray": 7.639170568069655
+          },
+          "channel_entropy_encrypted": {
+            "Gray": 7.988771246439409
+          },
+          "npcr": 0.006103515625,
+          "uaci": 0.00011967677696078431,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.006103515625,
+            "npcr_critical": 99.5292169004512,
+            "npcr_pass": false,
+            "uaci": 0.00011967677696078431,
+            "uaci_lower": 33.10121110520426,
+            "uaci_upper": 33.825872228129086,
+            "uaci_pass": false
+          },
+          "npcr_plain_vs_cipher": 99.5849609375,
+          "uaci_plain_vs_cipher": 30.379566865808822,
+          "correlation_original": {
+            "horizontal": 0.9917893956118793,
+            "vertical": 0.9928493174153572,
+            "diagonal": 0.9868231665110021
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.000855147538154206,
+            "vertical": -0.025044376215304535,
+            "diagonal": -0.017579706564330833
+          },
+          "chi_square_original": {
+            "Gray": 19781.34375,
+            "mean": 19781.34375
+          },
+          "chi_square_encrypted": {
+            "Gray": 255.9375,
+            "mean": 255.9375
+          },
+          "encryption_time_ms": 2.118299998983275,
+          "decryption_time_ms": 2.0184000004519476
         }
       }
     },
@@ -412,8 +694,28 @@
           },
           "npcr": 99.61140950520834,
           "uaci": 33.326559627757355,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.61140950520834,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": true,
+            "uaci": 33.326559627757355,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.60123697916666,
           "uaci_plain_vs_cipher": 33.36476045496323,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.004078117127762493,
+            "vertical": 0.006501583995163137,
+            "diagonal": -0.003738375794980719
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -426,8 +728,8 @@
             "B": 274.34375,
             "mean": 268.59375
           },
-          "encryption_time_ms": 42.669999999816355,
-          "decryption_time_ms": 6.937699999980396
+          "encryption_time_ms": 44.49229999954696,
+          "decryption_time_ms": 6.459800000811811
         },
         "benchmark_sbox44": {
           "mode": "CBC",
@@ -454,8 +756,28 @@
           },
           "npcr": 99.652099609375,
           "uaci": 33.455802568423195,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.652099609375,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": true,
+            "uaci": 33.455802568423195,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.57478841145834,
           "uaci_plain_vs_cipher": 33.41475343392566,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.005399482876587818,
+            "vertical": -0.004098036359052289,
+            "diagonal": 0.004835153477365221
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -468,8 +790,8 @@
             "B": 268.125,
             "mean": 261.8541666666667
           },
-          "encryption_time_ms": 43.11250000000655,
-          "decryption_time_ms": 6.9733000000269385
+          "encryption_time_ms": 54.195299999264535,
+          "decryption_time_ms": 12.937800000145216
         },
         "custom_sbox": {
           "mode": "CBC",
@@ -496,8 +818,28 @@
           },
           "npcr": 99.57071940104166,
           "uaci": 33.43275282118055,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.57071940104166,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": true,
+            "uaci": 33.43275282118055,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": true
+          },
           "npcr_plain_vs_cipher": 99.57682291666666,
           "uaci_plain_vs_cipher": 33.41888627195671,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.008675450513268106,
+            "vertical": 0.011795026254270188,
+            "diagonal": 0.0030891893915443377
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -510,8 +852,70 @@
             "B": 258.5625,
             "mean": 265.5520833333333
           },
-          "encryption_time_ms": 42.7255999998124,
-          "decryption_time_ms": 6.53680000004897
+          "encryption_time_ms": 44.033100000888226,
+          "decryption_time_ms": 6.623600000239094
+        },
+        "non_algebraic_sbox": {
+          "mode": "CBC",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.477742832279144,
+          "entropy_encrypted": 7.996057856800954,
+          "channel_entropy_original": {
+            "R": 6.655231387423099,
+            "G": 6.655231387423099,
+            "B": 7.213313462369263
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.987878078412784,
+            "G": 7.989103335064524,
+            "B": 7.988546167135322
+          },
+          "npcr": 99.63785807291666,
+          "uaci": 33.260976753982845,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 99.63785807291666,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": true,
+            "uaci": 33.260976753982845,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": true
+          },
+          "npcr_plain_vs_cipher": 99.61751302083334,
+          "uaci_plain_vs_cipher": 33.545185163909316,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.00406194806873911,
+            "vertical": -0.0021126313674601142,
+            "diagonal": -0.0033588936419325917
+          },
+          "chi_square_original": {
+            "R": 71045.0625,
+            "G": 71045.0625,
+            "B": 65544.5625,
+            "mean": 69211.5625
+          },
+          "chi_square_encrypted": {
+            "R": 276.28125,
+            "G": 248.21875,
+            "B": 261.09375,
+            "mean": 261.8645833333333
+          },
+          "encryption_time_ms": 45.48579999936919,
+          "decryption_time_ms": 6.350700001348741
         }
       },
       "CTR": {
@@ -540,8 +944,28 @@
           },
           "npcr": 0.002034505208333333,
           "uaci": 7.97845179738562e-06,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.002034505208333333,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": false,
+            "uaci": 7.97845179738562e-06,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.603271484375,
           "uaci_plain_vs_cipher": 33.42420789930555,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.005831069514643604,
+            "vertical": 0.004528676187588707,
+            "diagonal": -0.004762639820071184
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -554,8 +978,8 @@
             "B": 289.65625,
             "mean": 271.7291666666667
           },
-          "encryption_time_ms": 6.458199999997305,
-          "decryption_time_ms": 6.468400000358088
+          "encryption_time_ms": 6.962499999644933,
+          "decryption_time_ms": 6.445900000471738
         },
         "benchmark_sbox44": {
           "mode": "CTR",
@@ -582,8 +1006,28 @@
           },
           "npcr": 0.002034505208333333,
           "uaci": 7.97845179738562e-06,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.002034505208333333,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": false,
+            "uaci": 7.97845179738562e-06,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.603271484375,
           "uaci_plain_vs_cipher": 33.43801859936683,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": -9.682648468268817e-05,
+            "vertical": 0.00019974500555307827,
+            "diagonal": -0.018041865299913785
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -596,8 +1040,8 @@
             "B": 242.40625,
             "mean": 257.1770833333333
           },
-          "encryption_time_ms": 5.797000000256958,
-          "decryption_time_ms": 6.334700000024895
+          "encryption_time_ms": 5.598499999905471,
+          "decryption_time_ms": 6.487800001195865
         },
         "custom_sbox": {
           "mode": "CTR",
@@ -624,8 +1068,28 @@
           },
           "npcr": 0.002034505208333333,
           "uaci": 7.97845179738562e-06,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.002034505208333333,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": false,
+            "uaci": 7.97845179738562e-06,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": false
+          },
           "npcr_plain_vs_cipher": 99.64803059895834,
           "uaci_plain_vs_cipher": 33.309892641952615,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": -0.004980530955366313,
+            "vertical": -0.0008535182149486957,
+            "diagonal": 0.0024332937767828334
+          },
           "chi_square_original": {
             "R": 71045.0625,
             "G": 71045.0625,
@@ -638,8 +1102,70 @@
             "B": 239.3125,
             "mean": 265.5520833333333
           },
-          "encryption_time_ms": 6.312600000001112,
-          "decryption_time_ms": 6.674400000065361
+          "encryption_time_ms": 8.486500000799424,
+          "decryption_time_ms": 5.66889999936393
+        },
+        "non_algebraic_sbox": {
+          "mode": "CTR",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "iv_or_nonce_hex": "2416da6ec212cddb8d8800160eb686b2",
+          "is_lossless": true,
+          "mse": 0.0,
+          "max_abs_diff": 0,
+          "entropy_original": 7.477742832279144,
+          "entropy_encrypted": 7.996227662385218,
+          "channel_entropy_original": {
+            "R": 6.655231387423099,
+            "G": 6.655231387423099,
+            "B": 7.213313462369263
+          },
+          "channel_entropy_encrypted": {
+            "R": 7.9895048808213325,
+            "G": 7.98953890687255,
+            "B": 7.9883491985623625
+          },
+          "npcr": 0.002034505208333333,
+          "uaci": 7.97845179738562e-06,
+          "wu2011_test": {
+            "alpha": 0.05,
+            "npcr": 0.002034505208333333,
+            "npcr_critical": 99.56309569964777,
+            "npcr_pass": false,
+            "uaci": 7.97845179738562e-06,
+            "uaci_lower": 33.25435001947072,
+            "uaci_upper": 33.67273331386262,
+            "uaci_pass": false
+          },
+          "npcr_plain_vs_cipher": 99.61751302083334,
+          "uaci_plain_vs_cipher": 33.20885352839053,
+          "correlation_original": {
+            "horizontal": 0.9890948643334424,
+            "vertical": 0.9903618146671173,
+            "diagonal": 0.9817660128890112
+          },
+          "correlation_encrypted": {
+            "horizontal": 0.00016750139810573777,
+            "vertical": -0.00023952782488103494,
+            "diagonal": -0.005518774187314959
+          },
+          "chi_square_original": {
+            "R": 71045.0625,
+            "G": 71045.0625,
+            "B": 65544.5625,
+            "mean": 69211.5625
+          },
+          "chi_square_encrypted": {
+            "R": 240.375,
+            "G": 234.9375,
+            "B": 265.6875,
+            "mean": 247.0
+          },
+          "encryption_time_ms": 6.671700000879355,
+          "decryption_time_ms": 5.753200000981451
         }
       }
     }

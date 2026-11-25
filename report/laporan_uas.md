@@ -211,10 +211,12 @@ F0: 2E 59 C5 A7 D5 69 E7 45 38 21 96 58 D9 5F 1A 5E
 ```
 
 ### 3.5 Ringkasan Verifikasi Perangkat Lunak
-- **Eksekusi Eksperimen S-box (`Fase 1 & 2`):** `python scripts/run_experiment.py` selesai dengan kode keluar `0` dalam `2.014 s` dan menghasilkan `data/sbox_results.json` yang valid (`100` entri `convergence_history`, `inverse_round_trip_verified = true`).
-- **Eksekusi Evaluasi Citra (`Fase 3`):** `python scripts/run_image_eval.py` menghasilkan `data/image_eval_results.json` (sampel grayscale & RGB `128×128`), dan `python scripts/run_image_eval.py --image data/samples/foto_asli.jpg --output data/image_eval_real.json` menghasilkan hasil evaluasi citra nyata Lena (`258×258×3`).
-- **Pengujian Otomatis (`Fase 1–3`):** `python -m unittest discover -s tests -v` menjalankan **13 unit test** (`TestGFMath`, `TestSBoxMetrics`, `TestSBoxOptimizer`, `TestAESCustom`, `TestImageEvaluation`) dalam `0.835 s` dengan hasil seluruhnya **OK**.
-- **Dashboard Streamlit (`Fase 4`):** `app.py` diverifikasi secara headless menggunakan `streamlit.testing.v1.AppTest` dengan **4 tab aktif** dan nol galat (*zero exceptions*).
+- **Eksekusi Eksperimen Dual-Track (`Fase 1 & 2`):** `python scripts/run_experiment.py` selesai dengan kode keluar `0` dan menghasilkan `data/sbox_results.json`:
+  - **Track B (Aljabar Hybrid GA-SA di $\mathrm{GL}(8,2)$, `1.806 s`):** `NL = 112`, `BIC-NL = 112`, `SAC = 0.50000`, `BIC-SAC = 0.50000`, `S = 0.000000`, `DU = 4`, `Alg. Degree = 7`, `Fixed/Opp = 0/0`. Pada *Fair-Budget Benchmark* (`3280` evaluasi acak di $\mathrm{GL}(8,2)$), rata-rata `Random Search` hanya `Mean S = 0.002901`.
+  - **Track A (Non-Aljabar Murni WHS-SA di ruang permutasi $S_{256}$, `2.545 s`, tanpa $\mathrm{GF}(2^8)$ & tanpa matriks afin):** Berhasil mengangkat kualitas permutasi acak murni dari `NL = 96` (`BIC-NL = 94`, `LAP = 0.15625`, `SV = 50.00645`) menjadi **`NL = 104`**, **`BIC-NL = 102`**, **`LAP = 0.10156`**, **`SV = 34.00861`**, `Alg. Degree = 7`, membuktikan optimasi heuristik bekerja nyata tanpa mengandalkan struktur aljabar polinomial.
+- **Eksekusi Evaluasi Citra (`Fase 3`):** `python scripts/run_image_eval.py` menghasilkan `data/image_eval_results.json` (16 skenario pada sampel `128×128`) dan `python scripts/run_image_eval.py --image data/samples/foto_asli.jpg --output data/image_eval_real.json` menghasilkan evaluasi citra nyata Lena (`258×258×3`, termasuk `non_algebraic_sbox`, korelasi piksel H/V/D, dan uji statistik Wu et al. 2011).
+- **Pengujian Otomatis (`Fase 1–3`):** `python -m unittest discover -s tests -v` memverifikasi seluruh unit test (`TestGFMath`, `TestSBoxMetrics`, `TestSBoxOptimizer`, `TestAESCustom`, `TestImageEvaluation`).
+- **Dashboard Streamlit (`Fase 4`):** `app.py` menyediakan **5 tab interaktif** (Ringkasan Dual-Track, Tabel S-box & Audit Lengkap, Enkripsi Citra Real-Time, Demo Enkripsi Teks & Bit Avalanche, dan Benchmark Citra).
 
 ---
 
@@ -247,14 +249,16 @@ Pengujian dilakukan dengan seed terkunci (`RANDOM_SEED = 42`, `key = 8826d916cdf
 
 **Tabel B — Evaluasi Citra Nyata Lena (`data/image_eval_real.json`, `foto_asli.jpg`, `258×258×3`):**
 
-| Mode | S-box | Lossless | Entropi (Orig → Enc) | NPCR (%) | UACI (%) | $\chi^2$ (Orig → Enc) | Enc / Dec (ms) |
-| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| CBC | `aes_standard` | `True` | `7.47986` → `7.99909` | `99.6014` | `33.4568` | `38139.4` → `251.0` | `160.23` / `27.26` |
-| CBC | `benchmark_sbox44` | `True` | `7.47986` → `7.99894` | `99.6049` | `33.4428` | `38139.4` → `261.4` | `163.28` / `27.25` |
-| CBC | **`custom_sbox`** | **`True`** | `7.47986` → **`7.99916`** | **`99.5919`** | **`33.3583`** | `38139.4` → **`252.5`** | `164.44` / `26.41` |
-| CTR | `aes_standard` | `True` | `7.47986` → `7.99907` | `0.0005`* | `0.0000`* | `38139.4` → `252.6` | `21.81` / `21.56` |
-| CTR | `benchmark_sbox44` | `True` | `7.47986` → `7.99919` | `0.0005`* | `0.0000`* | `38139.4` → `261.4` | `21.55` / `21.44` |
-| CTR | **`custom_sbox`** | **`True`** | `7.47986` → **`7.99894`** | `0.0005`* | `0.0000`* | `38139.4` → **`266.7`** | `21.64` / `21.76` |
+| Mode | S-box | Lossless | Entropi (Orig → Enc) | NPCR (%) | UACI (%) | Wu 2011 | Korelasi Enc (H / V / D) | $\chi^2$ Enc |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| CBC | `aes_standard` | `True` | `7.47986` → `7.99909` | `99.6014` | `33.4568` | `PASS/PASS` | `-0.001 / -0.013 / -0.003` | `251.0` |
+| CBC | `benchmark_sbox44` | `True` | `7.47986` → `7.99894` | `99.6049` | `33.4428` | `PASS/PASS` | `-0.003 / -0.004 / +0.002` | `261.4` |
+| CBC | **`custom_sbox`** | **`True`** | `7.47986` → **`7.99916`** | **`99.5919`** | **`33.3583`** | `PASS/FAIL` | `-0.004 / +0.007 / +0.005` | **`252.5`** |
+| CBC | **`non_algebraic_sbox`** | **`True`** | `7.47986` → **`7.99890`** | **`99.6059`** | **`33.3953`** | **`PASS/PASS`** | `-0.003 / +0.010 / +0.006` | **`282.0`** |
+| CTR | `aes_standard` | `True` | `7.47986` → `7.99907` | `0.0005`* | `0.0000`* | `FAIL/FAIL`* | `-0.005 / +0.006 / -0.013` | `252.6` |
+| CTR | `benchmark_sbox44` | `True` | `7.47986` → `7.99919` | `0.0005`* | `0.0000`* | `FAIL/FAIL`* | `-0.001 / -0.000 / -0.003` | `261.4` |
+| CTR | **`custom_sbox`** | **`True`** | `7.47986` → **`7.99894`** | `0.0005`* | `0.0000`* | `FAIL/FAIL`* | `-0.004 / -0.004 / -0.008` | **`266.7`** |
+| CTR | **`non_algebraic_sbox`** | **`True`** | `7.47986` → **`7.99923`** | `0.0005`* | `0.0000`* | `FAIL/FAIL`* | `+0.008 / +0.011 / +0.009` | **`220.2`** |
 
 ### 4.3 Analisis Keamanan & Perilaku Mode Operasi
 1. **Entropi & Keseragaman Histogram ($\chi^2$):** Pada citra Lena, `custom_sbox` mode CBC menaikkan entropi dari `7.47986` ke `7.99916` (mendekati batas ideal `8.0`) dan menurunkan statistik $\chi^2$ dari `38139.4` menjadi `252.5` (di bawah nilai kritis $\chi^2_{0.05, 255} \approx 293.25$), membuktikan distribusi intensitas piksel terenkripsi seragam secara statistik.
@@ -265,11 +269,12 @@ Pengujian dilakukan dengan seed terkunci (`RANDOM_SEED = 42`, `key = 8826d916cdf
 
 ## 5. Dashboard Interaktif Streamlit (Fase 4)
 
-Aplikasi web interaktif diimplementasikan pada `app.py` (`python -m streamlit run app.py`) dengan 4 tab utama:
-1. **Tab 1 — Ringkasan & Metrik S-box:** Menampilkan kartu metrik `custom_sbox`, tabel komparasi terhadap AES Standar & S-box44, grafik deviasi metrik, serta kurva konvergensi Hybrid GA-SA.
-2. **Tab 2 — Tabel S-box 16×16 & Analisis SAC:** Menampilkan matriks S-box dan Inverse S-box $16 \times 16$ (heksadesimal/desimal), matriks afin $K$, konstanta $C$, heatmap matriks SAC $8 \times 8$, serta tombol unduh `.csv` dan `.json`.
-3. **Tab 3 — Enkripsi & Dekripsi Citra Real-Time:** Mendukung unggah citra pengguna, citra nyata Lena (`foto_asli.jpg`), maupun sampel bawaan dengan pilihan S-box, mode `CBC`/`CTR`, kunci 16-byte (hex/passphrase), verifikasi *lossless*, metrik Entropi/NPCR/UACI/$\chi^2$, histogram asli vs terenkripsi, dan unduh hasil `.png`.
-4. **Tab 4 — Benchmark Enkripsi Citra:** Menyajikan tabel dan grafik perbandingan hasil uji citra nyata Lena (`data/image_eval_real.json`) dan sampel terstruktur (`data/image_eval_results.json`).
+Aplikasi web interaktif diimplementasikan pada `app.py` (`python -m streamlit run app.py`) dengan **5 tab utama**:
+1. **Tab 1 — Ringkasan & Dual-Track:** Menampilkan perbandingan Track A (Non-Aljabar WHS-SA tanpa $\mathrm{GF}(2^8)$) dan Track B (Hybrid GA-SA $\mathrm{GL}(8,2)$), tabel komparasi 5 S-box, kurva konvergensi kedua track, serta *Fair-Budget Benchmark* vs Random Search.
+2. **Tab 2 — Tabel S-box 16×16 & Audit:** Menampilkan matriks S-box dan Inverse S-box $16 \times 16$ (heksadesimal/desimal), audit lengkap (`DU`, `Algebraic Degree`, `Cycle Structure`, `Fixed Points`), matriks afin $K$ (untuk S-box aljabar), heatmap matriks SAC $8 \times 8$, serta tombol unduh `.csv` dan `.json`.
+3. **Tab 3 — Enkripsi Citra Real-Time:** Mendukung unggah citra pengguna, citra nyata Lena (`foto_asli.jpg`), maupun sampel bawaan dengan pilihan seluruh S-box, mode `CBC`/`CTR`, verifikasi *lossless*, Entropi, NPCR/UACI + **uji statistik Wu et al. (2011)**, **korelasi piksel bertetangga (H/V/D)**, $\chi^2$, histogram asli vs terenkripsi, dan unduh hasil `.png`.
+4. **Tab 4 — Demo Teks & Bit Avalanche:** Enkripsi/dekripsi teks UTF-8 (`CBC`/`CTR`) dan pengukuran *Bit Avalanche* akibat perubahan 1 bit plaintext.
+5. **Tab 5 — Benchmark Citra:** Menyajikan tabel dan grafik perbandingan hasil uji citra nyata Lena (`data/image_eval_real.json`) dan sampel terstruktur (`data/image_eval_results.json`).
 
 ---
 

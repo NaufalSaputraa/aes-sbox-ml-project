@@ -18,6 +18,7 @@ _POPCOUNT_PARITY = np.array(
     [bin(val).count("1") & 1 for val in range(GF_SIZE)],
     dtype=np.int32,
 )
+_POPCOUNT = np.array([bin(val).count("1") for val in range(GF_SIZE)], dtype=np.int32)
 _B_MASKS = np.arange(1, GF_SIZE, dtype=np.uint8)
 
 
@@ -159,8 +160,8 @@ def compute_lap(sbox: np.ndarray | list[int]) -> float:
     return float(max_wht / 512.0)
 
 
-def compute_dap(sbox: np.ndarray | list[int]) -> float:
-    """Compute Differential Approximation Probability (DAP = max DDT / 256)."""
+def compute_differential_uniformity(sbox: np.ndarray | list[int]) -> int:
+    """Compute Differential Uniformity (maximum non-zero entry of the DDT)."""
     arr = _as_sbox_array(sbox)
     max_ddt = 0
     for dx in range(1, GF_SIZE):
@@ -168,7 +169,62 @@ def compute_dap(sbox: np.ndarray | list[int]) -> float:
         cnt = int(np.bincount(dy, minlength=GF_SIZE).max())
         if cnt > max_ddt:
             max_ddt = cnt
-    return float(max_ddt / float(GF_SIZE))
+    return max_ddt
+
+
+def compute_dap(sbox: np.ndarray | list[int]) -> float:
+    """Compute Differential Approximation Probability (DAP = DU / 256)."""
+    return float(compute_differential_uniformity(sbox) / float(GF_SIZE))
+
+
+def compute_algebraic_degree(sbox: np.ndarray | list[int]) -> dict[str, Any]:
+    """Compute algebraic degree of all 8 coordinate Boolean functions via Fast Mobius Transform."""
+    arr = _as_sbox_array(sbox)
+    bits = ((arr[:, None] >> _BIT_INDICES) & 1).astype(np.uint8).T  # (8, 256)
+    anf = bits.copy()
+    for i in range(8):
+        step = 1 << i
+        anf = anf.reshape(8, -1, 2 * step)
+        anf[:, :, step:] ^= anf[:, :, :step]
+        anf = anf.reshape(8, GF_SIZE)
+
+    degrees: list[int] = []
+    for b in range(8):
+        active = np.flatnonzero(anf[b])
+        degrees.append(int(_POPCOUNT[active].max()) if active.size > 0 else 0)
+
+    return {
+        "algebraic_degree_min": int(min(degrees)),
+        "algebraic_degree_max": int(max(degrees)),
+        "algebraic_degrees": degrees,
+    }
+
+
+def compute_cycle_structure(sbox: np.ndarray | list[int]) -> dict[str, Any]:
+    """Compute disjoint cycle lengths of the permutation x -> S(x)."""
+    arr = _as_sbox_array(sbox)
+    if not is_bijective(arr):
+        return {"cycles": [], "num_cycles": 0, "min_cycle": 0, "max_cycle": 0}
+
+    visited = [False] * GF_SIZE
+    cycles: list[int] = []
+    for start in range(GF_SIZE):
+        if not visited[start]:
+            length = 0
+            cur = start
+            while not visited[cur]:
+                visited[cur] = True
+                cur = int(arr[cur])
+                length += 1
+            cycles.append(length)
+
+    cycles.sort(reverse=True)
+    return {
+        "cycles": cycles,
+        "num_cycles": len(cycles),
+        "min_cycle": min(cycles),
+        "max_cycle": max(cycles),
+    }
 
 
 def compute_composite_scores(
@@ -214,7 +270,10 @@ def evaluate_sbox(
     bic_nl_info = compute_bic_nl(arr)
     bic_sac_info = compute_bic_sac(arr)
     lap = compute_lap(arr)
-    dap = compute_dap(arr)
+    du = compute_differential_uniformity(arr)
+    dap = float(du / float(GF_SIZE))
+    deg_info = compute_algebraic_degree(arr)
+    cycle_info = compute_cycle_structure(arr)
     s_score, sv_score = compute_composite_scores(
         nl_info["nl"],
         sac_info["sac"],
@@ -242,7 +301,14 @@ def evaluate_sbox(
         "bic_sac_max": bic_sac_info["bic_sac_max"],
         "bic_sac_std": bic_sac_info["bic_sac_std"],
         "lap": lap,
+        "du": du,
         "dap": dap,
+        "algebraic_degree_min": deg_info["algebraic_degree_min"],
+        "algebraic_degree_max": deg_info["algebraic_degree_max"],
+        "cycles": cycle_info["cycles"],
+        "num_cycles": cycle_info["num_cycles"],
+        "min_cycle": cycle_info["min_cycle"],
+        "max_cycle": cycle_info["max_cycle"],
         "s_score": s_score,
         "sv_score": sv_score,
         "fixed_points": fixed_points,
@@ -251,4 +317,5 @@ def evaluate_sbox(
     if include_details:
         result["nl_per_bit"] = nl_info["nl_per_bit"]
         result["sac_matrix"] = sac_info["sac_matrix"]
+        result["algebraic_degrees"] = deg_info["algebraic_degrees"]
     return result

@@ -1,4 +1,4 @@
-"""CLI runner for Fase 1 validation and Fase 2 Hybrid GA-SA S-box optimization."""
+"""CLI runner for Dual-Track S-box optimization (Track A Non-Algebraic + Track B Hybrid GA-SA)."""
 
 from __future__ import annotations
 
@@ -37,7 +37,11 @@ from src.gf_math import (
     to_sbox_hex_grid,
 )
 from src.sbox_metrics import evaluate_sbox
-from src.sbox_optimizer import HybridGASASboxOptimizer
+from src.sbox_optimizer import (
+    HybridGASASboxOptimizer,
+    NonAlgebraicWHSOptimizer,
+    run_random_search_benchmark,
+)
 
 
 def _to_json_safe(obj: Any) -> Any:
@@ -58,17 +62,19 @@ def _to_json_safe(obj: Any) -> Any:
 
 
 def _serialize_sbox_entry(
-    matrix: np.ndarray,
-    constant: int,
+    matrix: np.ndarray | None,
+    constant: int | None,
     sbox: np.ndarray,
     inv_sbox: np.ndarray,
     metrics: dict[str, Any],
+    construction_type: str = "algebraic_gf28",
 ) -> dict[str, Any]:
     """Build a structured JSON dictionary for a single S-box configuration."""
     return {
-        "affine_matrix": _to_json_safe(matrix),
-        "affine_constant": int(constant),
-        "affine_constant_hex": f"0x{constant:02X}",
+        "construction_type": construction_type,
+        "affine_matrix": _to_json_safe(matrix) if matrix is not None else None,
+        "affine_constant": int(constant) if constant is not None else None,
+        "affine_constant_hex": f"0x{constant:02X}" if constant is not None else "N/A (Non-Aljabar)",
         "sbox_flat": [int(v) for v in sbox],
         "sbox_16x16": to_sbox_grid(sbox),
         "sbox_hex_16x16": to_sbox_hex_grid(sbox),
@@ -89,31 +95,24 @@ def _verify_aes_baseline(metrics: dict[str, Any]) -> None:
     )
     assert abs(metrics["lap"] - 0.0625) < 1e-9, f"Unexpected AES LAP={metrics['lap']}"
     assert abs(metrics["dap"] - 0.015625) < 1e-9, f"Unexpected AES DAP={metrics['dap']}"
+    assert metrics["du"] == 4, f"Expected AES DU=4, got {metrics['du']}"
+    assert metrics["algebraic_degree_min"] == 7, "Expected AES algebraic degree=7"
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse CLI arguments for reproducible S-box optimization."""
+    """Parse CLI arguments for reproducible Dual-Track S-box optimization."""
     parser = argparse.ArgumentParser(
-        description="Run AES S-box baseline validation and Hybrid GA-SA optimization."
+        description="Run Dual-Track S-box optimization (Non-Algebraic WHS-SA & Hybrid GA-SA)."
     )
     parser.add_argument("--seed", type=int, default=RANDOM_SEED, help="Locked random seed")
+    parser.add_argument("--population", type=int, default=GA_POPULATION_SIZE, help="GA population size")
+    parser.add_argument("--generations", type=int, default=GA_GENERATIONS, help="GA generations")
+    parser.add_argument("--sa-steps", type=int, default=SA_STEPS, help="GA-SA local SA steps")
     parser.add_argument(
-        "--population",
+        "--non-alg-steps",
         type=int,
-        default=GA_POPULATION_SIZE,
-        help="GA population size",
-    )
-    parser.add_argument(
-        "--generations",
-        type=int,
-        default=GA_GENERATIONS,
-        help="Number of GA generations",
-    )
-    parser.add_argument(
-        "--sa-steps",
-        type=int,
-        default=SA_STEPS,
-        help="Number of Simulated Annealing refinement steps",
+        default=12000,
+        help="Non-Algebraic WHS-SA optimization steps",
     )
     parser.add_argument(
         "--output",
@@ -125,7 +124,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Execute Fase 1 baseline verification and Fase 2 S-box optimization."""
+    """Execute Dual-Track optimization, Random Search benchmark, and save JSON."""
     args = parse_args()
 
     # 1. Standard AES S-box baseline
@@ -141,7 +140,7 @@ def main() -> int:
     sbox44_inv = build_inverse_sbox(sbox44)
     sbox44_metrics = evaluate_sbox(sbox44, include_details=True)
 
-    # 3. Hybrid GA-SA optimization
+    # 3. Track B: Hybrid GA-SA optimization over GL(8, 2)
     optimizer = HybridGASASboxOptimizer(
         poly=IRREDUCIBLE_POLY,
         seed=args.seed,
@@ -152,34 +151,55 @@ def main() -> int:
     opt_result = optimizer.optimize()
     custom_metrics = opt_result.metrics
 
-    # Verify lossless inverse round-trip
+    # 4. Track A: Pure Non-Algebraic WHS Simulated Annealing (zero GF(2^8), zero affine matrix)
+    non_alg_opt = NonAlgebraicWHSOptimizer(seed=args.seed, steps=args.non_alg_steps)
+    non_alg_res = non_alg_opt.optimize()
+    rand_perm_inv = build_inverse_sbox(non_alg_res.initial_sbox)
+    rand_perm_m = non_alg_res.initial_metrics
+    non_alg_m = non_alg_res.metrics
+
+    # 5. Fair-budget Random Search Benchmark in GL(8, 2)
+    fair_budget = args.population * args.generations + args.sa_steps
+    rand_bench = run_random_search_benchmark(
+        poly=IRREDUCIBLE_POLY,
+        seed=args.seed,
+        budget=fair_budget,
+    )
+
     round_trip_ok = bool(
         np.array_equal(opt_result.inverse_sbox[opt_result.sbox], np.arange(256, dtype=np.uint8))
+        and np.array_equal(non_alg_res.inverse_sbox[non_alg_res.sbox], np.arange(256, dtype=np.uint8))
     )
-    assert round_trip_ok, "Custom S-box inverse round-trip verification failed."
+    assert round_trip_ok, "Inverse S-box round-trip verification failed."
 
-    # 4. Print comparison summary
+    # 6. Print 5-way comparison summary
     comparison_rows = [
         {
-            "Metric": "NL",
-            "Target": ">= 112",
+            "Metric": "NL (min)",
+            "Target": ">= 112 (Alg.)",
             "AES Standard": f"{aes_metrics['nl']}",
             "S-box44 (Ref)": f"{sbox44_metrics['nl']}",
             "Custom GA-SA": f"{custom_metrics['nl']}",
+            "Random Perm": f"{rand_perm_m['nl']}",
+            "Non-Alg WHS-SA": f"{non_alg_m['nl']}",
         },
         {
-            "Metric": "SAC",
+            "Metric": "SAC (mean)",
             "Target": "~0.50000",
             "AES Standard": f"{aes_metrics['sac']:.5f}",
             "S-box44 (Ref)": f"{sbox44_metrics['sac']:.5f}",
             "Custom GA-SA": f"{custom_metrics['sac']:.5f}",
+            "Random Perm": f"{rand_perm_m['sac']:.5f}",
+            "Non-Alg WHS-SA": f"{non_alg_m['sac']:.5f}",
         },
         {
             "Metric": "BIC-NL",
-            "Target": ">= 112",
+            "Target": ">= 112 (Alg.)",
             "AES Standard": f"{aes_metrics['bic_nl']}",
             "S-box44 (Ref)": f"{sbox44_metrics['bic_nl']}",
             "Custom GA-SA": f"{custom_metrics['bic_nl']}",
+            "Random Perm": f"{rand_perm_m['bic_nl']}",
+            "Non-Alg WHS-SA": f"{non_alg_m['bic_nl']}",
         },
         {
             "Metric": "BIC-SAC",
@@ -187,20 +207,26 @@ def main() -> int:
             "AES Standard": f"{aes_metrics['bic_sac']:.5f}",
             "S-box44 (Ref)": f"{sbox44_metrics['bic_sac']:.5f}",
             "Custom GA-SA": f"{custom_metrics['bic_sac']:.5f}",
+            "Random Perm": f"{rand_perm_m['bic_sac']:.5f}",
+            "Non-Alg WHS-SA": f"{non_alg_m['bic_sac']:.5f}",
         },
         {
             "Metric": "LAP",
             "Target": "<= 0.0625",
-            "AES Standard": f"{aes_metrics['lap']:.4f}",
-            "S-box44 (Ref)": f"{sbox44_metrics['lap']:.4f}",
-            "Custom GA-SA": f"{custom_metrics['lap']:.4f}",
+            "AES Standard": f"{aes_metrics['lap']:.5f}",
+            "S-box44 (Ref)": f"{sbox44_metrics['lap']:.5f}",
+            "Custom GA-SA": f"{custom_metrics['lap']:.5f}",
+            "Random Perm": f"{rand_perm_m['lap']:.5f}",
+            "Non-Alg WHS-SA": f"{non_alg_m['lap']:.5f}",
         },
         {
-            "Metric": "DAP",
-            "Target": "<= 0.015625",
-            "AES Standard": f"{aes_metrics['dap']:.6f}",
-            "S-box44 (Ref)": f"{sbox44_metrics['dap']:.6f}",
-            "Custom GA-SA": f"{custom_metrics['dap']:.6f}",
+            "Metric": "DAP (DU)",
+            "Target": "<= 0.0156 (4)",
+            "AES Standard": f"{aes_metrics['dap']:.5f} ({aes_metrics['du']})",
+            "S-box44 (Ref)": f"{sbox44_metrics['dap']:.5f} ({sbox44_metrics['du']})",
+            "Custom GA-SA": f"{custom_metrics['dap']:.5f} ({custom_metrics['du']})",
+            "Random Perm": f"{rand_perm_m['dap']:.5f} ({rand_perm_m['du']})",
+            "Non-Alg WHS-SA": f"{non_alg_m['dap']:.5f} ({non_alg_m['du']})",
         },
         {
             "Metric": "S Score",
@@ -208,6 +234,8 @@ def main() -> int:
             "AES Standard": f"{aes_metrics['s_score']:.6f}",
             "S-box44 (Ref)": f"{sbox44_metrics['s_score']:.6f}",
             "Custom GA-SA": f"{custom_metrics['s_score']:.6f}",
+            "Random Perm": f"{rand_perm_m['s_score']:.6f}",
+            "Non-Alg WHS-SA": f"{non_alg_m['s_score']:.6f}",
         },
         {
             "Metric": "SV Score",
@@ -215,30 +243,53 @@ def main() -> int:
             "AES Standard": f"{aes_metrics['sv_score']:.5f}",
             "S-box44 (Ref)": f"{sbox44_metrics['sv_score']:.5f}",
             "Custom GA-SA": f"{custom_metrics['sv_score']:.5f}",
+            "Random Perm": f"{rand_perm_m['sv_score']:.5f}",
+            "Non-Alg WHS-SA": f"{non_alg_m['sv_score']:.5f}",
+        },
+        {
+            "Metric": "Alg. Degree (min)",
+            "Target": "7",
+            "AES Standard": f"{aes_metrics['algebraic_degree_min']}",
+            "S-box44 (Ref)": f"{sbox44_metrics['algebraic_degree_min']}",
+            "Custom GA-SA": f"{custom_metrics['algebraic_degree_min']}",
+            "Random Perm": f"{rand_perm_m['algebraic_degree_min']}",
+            "Non-Alg WHS-SA": f"{non_alg_m['algebraic_degree_min']}",
+        },
+        {
+            "Metric": "Cycles (Count)",
+            "Target": "Info",
+            "AES Standard": f"{aes_metrics['num_cycles']}",
+            "S-box44 (Ref)": f"{sbox44_metrics['num_cycles']}",
+            "Custom GA-SA": f"{custom_metrics['num_cycles']}",
+            "Random Perm": f"{rand_perm_m['num_cycles']}",
+            "Non-Alg WHS-SA": f"{non_alg_m['num_cycles']}",
+        },
+        {
+            "Metric": "Fixed / Opp. Fixed",
+            "Target": "0 / 0",
+            "AES Standard": f"{aes_metrics['fixed_points']} / {aes_metrics['opposite_fixed_points']}",
+            "S-box44 (Ref)": f"{sbox44_metrics['fixed_points']} / {sbox44_metrics['opposite_fixed_points']}",
+            "Custom GA-SA": f"{custom_metrics['fixed_points']} / {custom_metrics['opposite_fixed_points']}",
+            "Random Perm": f"{rand_perm_m['fixed_points']} / {rand_perm_m['opposite_fixed_points']}",
+            "Non-Alg WHS-SA": f"{non_alg_m['fixed_points']} / {non_alg_m['opposite_fixed_points']}",
         },
     ]
     df = pd.DataFrame(comparison_rows)
 
-    print("=" * 78)
-    print("AES S-Box Construction & Optimization Summary (Fase 1 & Fase 2)")
-    print("=" * 78)
-    print(f"Algorithm   : {opt_result.algorithm}")
-    print(f"Random Seed : {opt_result.seed}")
-    print(f"Runtime     : {opt_result.runtime_seconds:.3f} s")
+    print("=" * 98)
+    print("Dual-Track AES S-Box Construction & Optimization Summary")
+    print("=" * 98)
+    print(f"Track B (Algebraic)     : {opt_result.algorithm} ({opt_result.runtime_seconds:.3f} s)")
+    print(f"Track A (Non-Algebraic) : {non_alg_res.algorithm} ({non_alg_res.runtime_seconds:.3f} s)")
     print(
-        f"Constraints : bijective={custom_metrics['bijective']}, "
-        f"balanced={custom_metrics['balanced']} (128:128 per bit)"
+        f"Fair Budget Benchmark   : Hybrid GA-SA S={custom_metrics['s_score']:.6f} vs "
+        f"Random GL(8,2) ({rand_bench['budget']} evals) Best S={rand_bench['best_s_score']:.6f} "
+        f"(Mean S={rand_bench['mean_s_score']:.6f})"
     )
-    print(
-        f"Fixed Points: {custom_metrics['fixed_points']} | "
-        f"Opposite Fixed Points: {custom_metrics['opposite_fixed_points']} | "
-        f"Affine C: 0x{opt_result.affine_constant:02X}"
-    )
-    print("-" * 78)
+    print("-" * 98)
     print(df.to_string(index=False))
-    print("=" * 78)
+    print("=" * 98)
 
-    # 5. Persist results to JSON
     output_path: Path = args.output
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -249,7 +300,10 @@ def main() -> int:
             "seed": int(opt_result.seed),
             "algorithm": opt_result.algorithm,
             "runtime_seconds": float(opt_result.runtime_seconds),
+            "non_algebraic_algorithm": non_alg_res.algorithm,
+            "non_algebraic_runtime_seconds": float(non_alg_res.runtime_seconds),
             "hyperparameters": _to_json_safe(opt_result.hyperparameters),
+            "non_algebraic_hyperparameters": _to_json_safe(non_alg_res.hyperparameters),
             "target_metrics": _to_json_safe(TARGET_METRICS),
             "inverse_round_trip_verified": round_trip_ok,
         },
@@ -266,7 +320,25 @@ def main() -> int:
             opt_result.inverse_sbox,
             custom_metrics,
         ),
+        "random_permutation": _serialize_sbox_entry(
+            None,
+            None,
+            non_alg_res.initial_sbox,
+            rand_perm_inv,
+            rand_perm_m,
+            construction_type="random_permutation",
+        ),
+        "non_algebraic_sbox": _serialize_sbox_entry(
+            None,
+            None,
+            non_alg_res.sbox,
+            non_alg_res.inverse_sbox,
+            non_alg_m,
+            construction_type="non_algebraic_whs_sa",
+        ),
         "convergence_history": _to_json_safe(opt_result.history),
+        "non_algebraic_convergence_history": _to_json_safe(non_alg_res.history),
+        "random_search_benchmark": _to_json_safe(rand_bench),
         "comparison_summary": comparison_rows,
     }
 
